@@ -20,7 +20,7 @@ Goal: Implement user registration with email/password, unique email validation, 
 - [x] Implement POST /auth/register endpoint.
 - [x] Return safe response without passwordHash.
 - [x] Handle duplicate email and validation errors.
-- [ ] Add unit tests for hashing and validation.
+- [x] Add unit tests for hashing and validation.
 - [ ] Add integration tests for registration success/failure cases.
 
 ## Task 2 - Authentication and Token Lifecycle (FR-2)
