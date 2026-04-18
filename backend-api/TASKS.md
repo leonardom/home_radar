@@ -82,6 +82,56 @@ Goal: Allow users to create and manage property search filters with strong valid
 - [x] Add unit tests for filter validation, range constraints, and service logic.
 - [x] Add integration tests for create/list/update/delete filter flows and ownership checks.
 
+## Task 5 - Property Matching Engine (FR-10)
+
+Goal: Match properties against user-defined filters using price, minimum bedrooms, location, and optional keywords.
+
+### Subtasks
+
+- [x] Define matching domain model and output contract (propertyId, filterId, userId, matchReason, matchedAt).
+- [ ] Add repository query to fetch active filters eligible for matching.
+- [x] Implement price range matching logic (`price >= min` and `price <= max` when limits exist).
+- [x] Implement minimum bedrooms matching logic (`property.bedrooms >= filter.bedroomsMin` when set).
+- [x] Implement location matching strategy (exact or normalized contains) and document rule.
+- [x] Implement optional keyword matching strategy for MVP (skip if filter keywords empty).
+- [x] Build pure matching service function that evaluates one property against one filter.
+- [x] Build batch matching flow to evaluate one property against all candidate filters.
+- [x] Standardize match result payload for downstream storage/trigger layers.
+- [x] Add unit tests for each matching criterion and combined scenarios.
+
+## Task 6 - Match Triggering Pipeline (FR-11)
+
+Goal: Trigger matching automatically when properties or filters change.
+
+### Subtasks
+
+- [ ] Define trigger events and payload contracts for `property.created`, `property.updated`, and `filter.created`.
+- [ ] Add integration point in property creation flow to dispatch matching job/event.
+- [ ] Add integration point in property update flow to dispatch matching job/event.
+- [ ] Add integration point in filter creation flow to dispatch matching job/event.
+- [ ] Implement trigger handler to resolve target entity and invoke matching service.
+- [ ] Add idempotency guard so repeated trigger delivery does not duplicate processing side effects.
+- [ ] Add failure handling and retries/logging strategy for trigger execution.
+- [ ] Ensure trigger execution is scoped to relevant filters/properties only (avoid full-table scans when possible).
+- [ ] Add integration tests for each trigger source and handler invocation.
+
+## Task 7 - Match Persistence and Deduplication (FR-12)
+
+Goal: Persist user-property matches and guarantee no duplicates.
+
+### Subtasks
+
+- [ ] Define `matches` table schema (id, userId, propertyId, filterId, matchedAt, createdAt).
+- [ ] Add foreign keys to users/properties/filters with appropriate delete behavior.
+- [ ] Add unique constraint/index to prevent duplicate matches (at least on `userId + propertyId`).
+- [ ] Implement repository methods: createMatch, findMatch, listMatchesByUser, listMatchesByProperty.
+- [ ] Implement upsert or conflict-ignore strategy for duplicate-safe inserts.
+- [ ] Persist match reason/metadata if required by the matching contract.
+- [ ] Add service layer orchestration to write all new matches from trigger results.
+- [ ] Add endpoint/retrieval contract for viewing stored matches (if exposed in MVP scope).
+- [ ] Add unit tests for deduplication and repository conflict behavior.
+- [ ] Add integration tests validating stored matches and duplicate prevention.
+
 ## Notes
 
 - Update each checkbox as work progresses.
