@@ -17,7 +17,7 @@ Goal: Implement user registration with email/password, unique email validation, 
 - [x] Create user repository methods: findByEmail, createUser, findById.
 - [x] Add request validation for registration payload (email/password rules).
 - [x] Implement password hashing (argon2 or bcrypt).
-- [ ] Implement POST /auth/register endpoint.
+- [x] Implement POST /auth/register endpoint.
 - [ ] Return safe response without passwordHash.
 - [ ] Handle duplicate email and validation errors.
 - [ ] Add unit tests for hashing and validation.
