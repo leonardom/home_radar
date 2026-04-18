@@ -60,6 +60,28 @@ Goal: Allow authenticated users to retrieve, update, and delete their profile.
 
 Deletion strategy selected: soft delete (`status=deleted`, `deletedAt` timestamp).
 
+## Task 4 - Search Filters (FR-7, FR-8, FR-9)
+
+Goal: Allow users to create and manage property search filters with strong validation and business constraints.
+
+### Subtasks
+
+- [x] Define search filter domain model (id, userId, priceMin, priceMax, bedroomsMin, bathroomsMin, location, propertyType, keywords, createdAt, updatedAt).
+- [x] Add database schema/migration for filters table.
+- [x] Add user ownership relation (`filters.user_id -> users.id`) and index common query fields.
+- [x] Implement repository methods: createFilter, listFiltersByUser, updateFilterById, deleteFilterById, countFiltersByUser.
+- [x] Define validation schemas for filter create/update payloads.
+- [x] Implement FR-9 numeric constraints (valid price and room ranges, min <= max when applicable).
+- [x] Implement POST /filters endpoint (FR-7).
+- [x] Implement GET /filters endpoint (FR-8 view all filters).
+- [x] Implement PATCH /filters/:id endpoint (FR-8 update filter).
+- [x] Implement DELETE /filters/:id endpoint (FR-8 delete filter).
+- [x] Enforce authorization so users only access their own filters.
+- [x] Enforce at least one-filter-per-user rule (free-tier optional toggle/flag).
+- [x] Standardize response and error contracts for all filter endpoints.
+- [x] Add unit tests for filter validation, range constraints, and service logic.
+- [x] Add integration tests for create/list/update/delete filter flows and ownership checks.
+
 ## Notes
 
 - Update each checkbox as work progresses.

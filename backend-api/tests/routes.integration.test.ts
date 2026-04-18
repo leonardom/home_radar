@@ -18,6 +18,11 @@ const {
   refreshRevokeByIdMock,
   refreshRevokeByTokenHashMock,
   refreshRevokeByUserIdMock,
+  createFilterMock,
+  listFiltersByUserMock,
+  updateFilterByIdMock,
+  deleteFilterByIdMock,
+  countFiltersByUserMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -36,6 +41,11 @@ const {
     refreshRevokeByIdMock: vi.fn<() => Promise<void>>(),
     refreshRevokeByTokenHashMock: vi.fn<() => Promise<void>>(),
     refreshRevokeByUserIdMock: vi.fn<() => Promise<void>>(),
+    createFilterMock: vi.fn<() => Promise<unknown>>(),
+    listFiltersByUserMock: vi.fn<() => Promise<unknown[]>>(),
+    updateFilterByIdMock: vi.fn<() => Promise<unknown>>(),
+    deleteFilterByIdMock: vi.fn<() => Promise<boolean>>(),
+    countFiltersByUserMock: vi.fn<() => Promise<number>>(),
   };
 });
 
@@ -92,6 +102,18 @@ vi.mock("../src/modules/auth/refresh-tokens.repository", () => {
   return { RefreshTokensRepository };
 });
 
+vi.mock("../src/modules/filters/filters.repository", () => {
+  class FiltersRepository {
+    createFilter = createFilterMock;
+    listFiltersByUser = listFiltersByUserMock;
+    updateFilterById = updateFilterByIdMock;
+    deleteFilterById = deleteFilterByIdMock;
+    countFiltersByUser = countFiltersByUserMock;
+  }
+
+  return { FiltersRepository };
+});
+
 import { buildApp } from "../src/app";
 
 describe("API routes", () => {
@@ -112,6 +134,11 @@ describe("API routes", () => {
     refreshRevokeByIdMock.mockReset();
     refreshRevokeByTokenHashMock.mockReset();
     refreshRevokeByUserIdMock.mockReset();
+    createFilterMock.mockReset();
+    listFiltersByUserMock.mockReset();
+    updateFilterByIdMock.mockReset();
+    deleteFilterByIdMock.mockReset();
+    countFiltersByUserMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -140,6 +167,28 @@ describe("API routes", () => {
     refreshRevokeByIdMock.mockResolvedValue(undefined);
     refreshRevokeByTokenHashMock.mockResolvedValue(undefined);
     refreshRevokeByUserIdMock.mockResolvedValue(undefined);
+    countFiltersByUserMock.mockResolvedValue(2);
+
+    const filterFixture = {
+      id: "ceffb7eb-cded-4a75-8a5e-53f7f3f577f7",
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      priceMin: 100000,
+      priceMax: 300000,
+      bedroomsMin: 2,
+      bedroomsMax: 4,
+      bathroomsMin: 1,
+      bathroomsMax: 2,
+      location: "Douglas",
+      propertyType: "house",
+      keywords: ["garden", "parking"],
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T12:00:00.000Z"),
+    };
+
+    createFilterMock.mockResolvedValue(filterFixture);
+    listFiltersByUserMock.mockResolvedValue([filterFixture]);
+    updateFilterByIdMock.mockResolvedValue(filterFixture);
+    deleteFilterByIdMock.mockResolvedValue(true);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -434,6 +483,125 @@ describe("API routes", () => {
 
     expect(response.statusCode).toBe(204);
     expect(refreshRevokeByUserIdMock).toHaveBeenCalledTimes(1);
+
+    await app.close();
+  });
+
+  it("creates a filter", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/filters",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        priceMin: 100000,
+        priceMax: 300000,
+        bedroomsMin: 2,
+        bedroomsMax: 4,
+        location: "Douglas",
+        propertyType: "house",
+        keywords: ["garden", "parking"],
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().id).toBe("ceffb7eb-cded-4a75-8a5e-53f7f3f577f7");
+
+    await app.close();
+  });
+
+  it("lists user filters", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/filters",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().items).toHaveLength(1);
+
+    await app.close();
+  });
+
+  it("updates an existing filter", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/filters/ceffb7eb-cded-4a75-8a5e-53f7f3f577f7",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        priceMax: 350000,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    await app.close();
+  });
+
+  it("deletes an existing filter", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/filters/ceffb7eb-cded-4a75-8a5e-53f7f3f577f7",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid filter range", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/filters",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        priceMin: 400000,
+        priceMax: 100000,
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("returns 404 when filter does not belong to user", async () => {
+    updateFilterByIdMock.mockResolvedValueOnce(null);
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/filters/ceffb7eb-cded-4a75-8a5e-53f7f3f577f7",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        location: "Onchan",
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
 
     await app.close();
   });

@@ -7,3 +7,4 @@ process.env.JWT_ACCESS_SECRET =
   process.env.JWT_ACCESS_SECRET ?? "test_access_secret_change_me_1234567890";
 process.env.JWT_ACCESS_EXPIRES_IN = process.env.JWT_ACCESS_EXPIRES_IN ?? "15m";
 process.env.JWT_REFRESH_EXPIRES_DAYS = process.env.JWT_REFRESH_EXPIRES_DAYS ?? "7";
+process.env.ENFORCE_MIN_ONE_FILTER = process.env.ENFORCE_MIN_ONE_FILTER ?? "false";
