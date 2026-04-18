@@ -241,7 +241,7 @@ JSON output includes persistence counters under `database`:
 Run migrations against your configured DB URL:
 
 ```bash
-export SCRAPER_DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/home_radar
+export SCRAPER_DATABASE_URL=postgresql+psycopg://USER:PASSWORD@DB_HOST:5432/home_radar
 uv run alembic upgrade head
 ```
 

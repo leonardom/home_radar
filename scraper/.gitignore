@@ -3,3 +3,20 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 *.pyc
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Local database artifacts
+*.db
+*.db-wal
+*.db-shm
+celerybeat-schedule
+
+# Local ad-hoc outputs
+out.json
+output.json
+sales_partners.json
+lettings_partners.json
