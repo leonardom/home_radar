@@ -29,17 +29,17 @@ Goal: Authenticate users and provide secure token issuance, expiration, and rene
 
 ### Subtasks
 
-- [ ] Implement POST /auth/login endpoint.
-- [ ] Verify credentials with secure password comparison.
-- [ ] Configure JWT access token issuance with short expiration.
-- [ ] Design refresh token model and persistence strategy.
-- [ ] Implement POST /auth/refresh endpoint.
-- [ ] Implement POST /auth/logout endpoint (token revoke).
-- [ ] Add token claims contract (sub, email, iat, exp, jti).
-- [ ] Add auth middleware/guard for protected routes.
-- [ ] Implement refresh token expiration and rotation policy.
-- [ ] Add unit tests for token generation/verification.
-- [ ] Add integration tests for login, refresh, expiration, and revoke scenarios.
+- [x] Implement POST /auth/login endpoint.
+- [x] Verify credentials with secure password comparison.
+- [x] Configure JWT access token issuance with short expiration.
+- [x] Design refresh token model and persistence strategy.
+- [x] Implement POST /auth/refresh endpoint.
+- [x] Implement POST /auth/logout endpoint (token revoke).
+- [x] Add token claims contract (sub, email, iat, exp, jti).
+- [x] Add auth middleware/guard for protected routes.
+- [x] Implement refresh token expiration and rotation policy.
+- [x] Add unit tests for token generation/verification.
+- [x] Add integration tests for login, refresh, expiration, and revoke scenarios.
 
 ## Task 3 - User Profile Management (FR-3)
 
