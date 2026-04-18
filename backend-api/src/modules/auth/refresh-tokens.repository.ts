@@ -1,7 +1,7 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
 
 import { db } from "../../config/db";
-import { refreshTokensTable } from "../../repositories/schema";
+import { refreshTokensTable } from "../../database/schema";
 
 export type RefreshTokenRecord = typeof refreshTokensTable.$inferSelect;
 

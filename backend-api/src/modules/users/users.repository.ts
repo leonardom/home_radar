@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 
 import { db } from "../../config/db";
-import { usersTable } from "../../repositories/schema";
+import { usersTable } from "../../database/schema";
 import { DuplicateEmailError } from "./users.errors";
 import type { NewUser, User } from "./user.types";
 import type { UpdateProfileRequest } from "./users.schemas";
