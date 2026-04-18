@@ -8,26 +8,33 @@ const hasAnyKeyword = (property: PropertyCandidate, keywords: string[]): boolean
     return true;
   }
 
-  const haystack = `${property.location} ${property.description}`.toLowerCase();
+  const haystack = `${property.location ?? ""} ${property.description ?? ""}`.toLowerCase();
 
   return keywords.some((keyword) => haystack.includes(keyword.toLowerCase()));
 };
 
 export class MatchingService {
   isPropertyMatch(property: PropertyCandidate, filter: SearchFilter): boolean {
-    if (filter.priceMin != null && property.price < filter.priceMin) {
+    if (filter.priceMin != null && (property.price == null || property.price < filter.priceMin)) {
       return false;
     }
 
-    if (filter.priceMax != null && property.price > filter.priceMax) {
+    if (filter.priceMax != null && (property.price == null || property.price > filter.priceMax)) {
       return false;
     }
 
-    if (filter.bedroomsMin != null && property.bedrooms < filter.bedroomsMin) {
+    if (
+      filter.bedroomsMin != null &&
+      (property.bedrooms == null || property.bedrooms < filter.bedroomsMin)
+    ) {
       return false;
     }
 
     if (filter.location != null) {
+      if (!property.location) {
+        return false;
+      }
+
       const filterLocation = normalize(filter.location);
       const propertyLocation = normalize(property.location);
       if (!propertyLocation.includes(filterLocation)) {
@@ -39,8 +46,8 @@ export class MatchingService {
       return false;
     }
 
-    if (filter.propertyType != null && property.propertyType != null) {
-      if (filter.propertyType !== property.propertyType) {
+    if (filter.propertyType != null) {
+      if (property.propertyType == null || filter.propertyType !== property.propertyType) {
         return false;
       }
     }
@@ -70,7 +77,7 @@ export class MatchingService {
       reasons.push("keywords");
     }
 
-    if (filter.propertyType != null && property.propertyType != null) {
+    if (filter.propertyType != null) {
       reasons.push("property_type");
     }
 

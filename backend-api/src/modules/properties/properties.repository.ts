@@ -1,7 +1,9 @@
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, gte, ilike, inArray, lte, ne } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { propertiesTable } from "../../database/schema";
+import type { SearchFilter } from "../filters/filters.types";
+import type { PropertyCandidate } from "../matching/matching.types";
 import type { Property, UpsertPropertyInput } from "./properties.types";
 
 const mapProperty = (row: typeof propertiesTable.$inferSelect): Property => {
@@ -21,6 +23,17 @@ const mapProperty = (row: typeof propertiesTable.$inferSelect): Property => {
     status: row.status as Property["status"],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+  };
+};
+
+const mapPropertyCandidate = (row: typeof propertiesTable.$inferSelect): PropertyCandidate => {
+  return {
+    id: row.id,
+    price: row.price,
+    bedrooms: row.bedrooms,
+    location: row.location,
+    description: row.title,
+    propertyType: row.propertyType as PropertyCandidate["propertyType"],
   };
 };
 
@@ -81,6 +94,47 @@ export class PropertiesRepository {
       .then((rows) => rows.at(0) ?? null);
 
     return property ? mapProperty(property) : null;
+  }
+
+  async findPropertyById(propertyId: string): Promise<PropertyCandidate | null> {
+    const row = await db
+      .select()
+      .from(propertiesTable)
+      .where(and(eq(propertiesTable.id, propertyId), eq(propertiesTable.status, "active")))
+      .then((rows) => rows.at(0) ?? null);
+
+    return row ? mapPropertyCandidate(row) : null;
+  }
+
+  async findCandidatePropertiesForFilter(filter: SearchFilter): Promise<PropertyCandidate[]> {
+    const clauses = [eq(propertiesTable.status, "active")];
+
+    if (filter.priceMin != null) {
+      clauses.push(gte(propertiesTable.price, filter.priceMin));
+    }
+
+    if (filter.priceMax != null) {
+      clauses.push(lte(propertiesTable.price, filter.priceMax));
+    }
+
+    if (filter.bedroomsMin != null) {
+      clauses.push(gte(propertiesTable.bedrooms, filter.bedroomsMin));
+    }
+
+    if (filter.location != null) {
+      clauses.push(ilike(propertiesTable.location, `%${filter.location}%`));
+    }
+
+    if (filter.propertyType != null) {
+      clauses.push(eq(propertiesTable.propertyType, filter.propertyType));
+    }
+
+    const rows = await db
+      .select()
+      .from(propertiesTable)
+      .where(and(...clauses));
+
+    return rows.map(mapPropertyCandidate);
   }
 
   async markInactiveMissingForSource(

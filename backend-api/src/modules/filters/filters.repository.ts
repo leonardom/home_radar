@@ -1,4 +1,4 @@
-import { and, count, eq, gte, isNull, lte, or } from "drizzle-orm";
+import { and, count, eq, gte, isNull, lte, or, type SQL } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { searchFiltersTable } from "../../database/schema";
@@ -70,22 +70,40 @@ export class FiltersRepository {
   }
 
   async findCandidateFiltersForProperty(property: PropertyCandidate): Promise<SearchFilter[]> {
-    const clauses = [
-      or(isNull(searchFiltersTable.priceMin), lte(searchFiltersTable.priceMin, property.price)),
-      or(isNull(searchFiltersTable.priceMax), gte(searchFiltersTable.priceMax, property.price)),
-      or(
-        isNull(searchFiltersTable.bedroomsMin),
-        lte(searchFiltersTable.bedroomsMin, property.bedrooms),
-      ),
-    ];
+    const clauses: SQL[] = [];
+
+    if (property.price != null) {
+      clauses.push(
+        or(isNull(searchFiltersTable.priceMin), lte(searchFiltersTable.priceMin, property.price))!,
+      );
+      clauses.push(
+        or(isNull(searchFiltersTable.priceMax), gte(searchFiltersTable.priceMax, property.price))!,
+      );
+    } else {
+      clauses.push(isNull(searchFiltersTable.priceMin));
+      clauses.push(isNull(searchFiltersTable.priceMax));
+    }
+
+    if (property.bedrooms != null) {
+      clauses.push(
+        or(
+          isNull(searchFiltersTable.bedroomsMin),
+          lte(searchFiltersTable.bedroomsMin, property.bedrooms),
+        )!,
+      );
+    } else {
+      clauses.push(isNull(searchFiltersTable.bedroomsMin));
+    }
 
     if (property.propertyType != null) {
       clauses.push(
         or(
           isNull(searchFiltersTable.propertyType),
           eq(searchFiltersTable.propertyType, property.propertyType),
-        ),
+        )!,
       );
+    } else {
+      clauses.push(isNull(searchFiltersTable.propertyType));
     }
 
     const rows = await db

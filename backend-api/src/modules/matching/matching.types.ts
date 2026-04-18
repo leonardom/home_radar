@@ -9,10 +9,10 @@ export type MatchReason =
 
 export type PropertyCandidate = {
   id: string;
-  price: number;
-  bedrooms: number;
-  location: string;
-  description: string;
+  price: number | null;
+  bedrooms: number | null;
+  location: string | null;
+  description: string | null;
   propertyType?: SearchFilter["propertyType"];
 };
 

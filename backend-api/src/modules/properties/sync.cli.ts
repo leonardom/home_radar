@@ -1,4 +1,11 @@
 import { closeDatabasePool } from "../../config/db";
+import { FiltersRepository } from "../filters/filters.repository";
+import { InMemoryTriggerEventStore } from "../matching/matching.event-store";
+import { MatchingService } from "../matching/matching.service";
+import { MatchingTriggerService } from "../matching/matching.trigger.service";
+import { DatabaseMatchingSink } from "../matches/matches.sink";
+import { MatchesRepository } from "../matches/matches.repository";
+import { MatchesService } from "../matches/matches.service";
 import { PropertiesRepository } from "./properties.repository";
 import { PropertiesSyncService } from "./properties.sync.service";
 import { ScraperListingsRepository } from "./scraper-listings.repository";
@@ -29,13 +36,28 @@ const run = async (): Promise<void> => {
   const source = parseSourceArg();
 
   const scraperRepository = new ScraperListingsRepository();
+  const filtersRepository = new FiltersRepository();
   const propertiesRepository = new PropertiesRepository();
+  const matchesRepository = new MatchesRepository();
   const syncStateRepository = new SyncStateRepository();
+
+  const matchingService = new MatchingService();
+  const eventStore = new InMemoryTriggerEventStore();
+  const matchesService = new MatchesService(matchesRepository);
+  const matchingSink = new DatabaseMatchingSink(matchesService);
+  const matchingDispatcher = new MatchingTriggerService(
+    matchingService,
+    filtersRepository,
+    propertiesRepository,
+    eventStore,
+    matchingSink,
+  );
 
   const syncService = new PropertiesSyncService(
     scraperRepository,
     propertiesRepository,
     syncStateRepository,
+    matchingDispatcher,
   );
 
   const result =
