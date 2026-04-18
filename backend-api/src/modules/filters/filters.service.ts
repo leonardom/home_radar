@@ -1,14 +1,28 @@
 import { env } from "../../config/env";
+import {
+  NoopMatchingTriggerDispatcher,
+  type MatchingTriggerDispatcher,
+} from "../matching/matching.trigger.dispatcher";
 import { FilterNotFoundError, MinimumFiltersConstraintError } from "./filters.errors";
 import { FiltersRepository } from "./filters.repository";
 import type { CreateFilterBody, UpdateFilterBody } from "./filters.schemas";
 import type { SearchFilter } from "./filters.types";
 
 export class FiltersService {
-  constructor(private readonly filtersRepository: FiltersRepository) {}
+  constructor(
+    private readonly filtersRepository: FiltersRepository,
+    private readonly matchingTriggerDispatcher: MatchingTriggerDispatcher = new NoopMatchingTriggerDispatcher(),
+  ) {}
 
   async createFilter(userId: string, payload: CreateFilterBody): Promise<SearchFilter> {
-    return this.filtersRepository.createFilter(userId, payload);
+    const filter = await this.filtersRepository.createFilter(userId, payload);
+
+    await this.matchingTriggerDispatcher.dispatchFilterCreated({
+      filterId: filter.id,
+      userId,
+    });
+
+    return filter;
   }
 
   async listFilters(userId: string): Promise<SearchFilter[]> {

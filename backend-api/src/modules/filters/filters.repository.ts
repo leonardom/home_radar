@@ -1,9 +1,10 @@
-import { and, count, eq } from "drizzle-orm";
+import { and, count, eq, gte, isNull, lte, or } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { searchFiltersTable } from "../../database/schema";
 import type { CreateFilterBody, UpdateFilterBody } from "./filters.schemas";
 import type { SearchFilter } from "./filters.types";
+import type { PropertyCandidate } from "../matching/matching.types";
 
 const mapFilter = (row: typeof searchFiltersTable.$inferSelect): SearchFilter => {
   return {
@@ -54,6 +55,43 @@ export class FiltersRepository {
       .select()
       .from(searchFiltersTable)
       .where(eq(searchFiltersTable.userId, userId));
+
+    return rows.map(mapFilter);
+  }
+
+  async findFilterByIdForUser(filterId: string, userId: string): Promise<SearchFilter | null> {
+    const row = await db
+      .select()
+      .from(searchFiltersTable)
+      .where(and(eq(searchFiltersTable.id, filterId), eq(searchFiltersTable.userId, userId)))
+      .then((rows) => rows.at(0) ?? null);
+
+    return row ? mapFilter(row) : null;
+  }
+
+  async findCandidateFiltersForProperty(property: PropertyCandidate): Promise<SearchFilter[]> {
+    const clauses = [
+      or(isNull(searchFiltersTable.priceMin), lte(searchFiltersTable.priceMin, property.price)),
+      or(isNull(searchFiltersTable.priceMax), gte(searchFiltersTable.priceMax, property.price)),
+      or(
+        isNull(searchFiltersTable.bedroomsMin),
+        lte(searchFiltersTable.bedroomsMin, property.bedrooms),
+      ),
+    ];
+
+    if (property.propertyType != null) {
+      clauses.push(
+        or(
+          isNull(searchFiltersTable.propertyType),
+          eq(searchFiltersTable.propertyType, property.propertyType),
+        ),
+      );
+    }
+
+    const rows = await db
+      .select()
+      .from(searchFiltersTable)
+      .where(and(...clauses));
 
     return rows.map(mapFilter);
   }

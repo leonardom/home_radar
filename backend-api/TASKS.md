@@ -89,7 +89,7 @@ Goal: Match properties against user-defined filters using price, minimum bedroom
 ### Subtasks
 
 - [x] Define matching domain model and output contract (propertyId, filterId, userId, matchReason, matchedAt).
-- [ ] Add repository query to fetch active filters eligible for matching.
+- [x] Add repository query to fetch active filters eligible for matching.
 - [x] Implement price range matching logic (`price >= min` and `price <= max` when limits exist).
 - [x] Implement minimum bedrooms matching logic (`property.bedrooms >= filter.bedroomsMin` when set).
 - [x] Implement location matching strategy (exact or normalized contains) and document rule.
@@ -105,15 +105,15 @@ Goal: Trigger matching automatically when properties or filters change.
 
 ### Subtasks
 
-- [ ] Define trigger events and payload contracts for `property.created`, `property.updated`, and `filter.created`.
+- [x] Define trigger events and payload contracts for `property.created`, `property.updated`, and `filter.created`.
 - [ ] Add integration point in property creation flow to dispatch matching job/event.
 - [ ] Add integration point in property update flow to dispatch matching job/event.
-- [ ] Add integration point in filter creation flow to dispatch matching job/event.
-- [ ] Implement trigger handler to resolve target entity and invoke matching service.
-- [ ] Add idempotency guard so repeated trigger delivery does not duplicate processing side effects.
-- [ ] Add failure handling and retries/logging strategy for trigger execution.
-- [ ] Ensure trigger execution is scoped to relevant filters/properties only (avoid full-table scans when possible).
-- [ ] Add integration tests for each trigger source and handler invocation.
+- [x] Add integration point in filter creation flow to dispatch matching job/event.
+- [x] Implement trigger handler to resolve target entity and invoke matching service.
+- [x] Add idempotency guard so repeated trigger delivery does not duplicate processing side effects.
+- [x] Add failure handling and retries/logging strategy for trigger execution.
+- [x] Ensure trigger execution is scoped to relevant filters/properties only (avoid full-table scans when possible).
+- [x] Add integration tests for each trigger source and handler invocation.
 
 ## Task 7 - Match Persistence and Deduplication (FR-12)
 

@@ -23,6 +23,7 @@ describe("FiltersService", () => {
   const updateFilterById = vi.fn();
   const deleteFilterById = vi.fn();
   const countFiltersByUser = vi.fn();
+  const dispatchFilterCreated = vi.fn();
 
   const repository = {
     createFilter,
@@ -32,7 +33,11 @@ describe("FiltersService", () => {
     countFiltersByUser,
   };
 
-  const service = new FiltersService(repository as never);
+  const service = new FiltersService(repository as never, {
+    dispatchPropertyCreated: vi.fn(),
+    dispatchPropertyUpdated: vi.fn(),
+    dispatchFilterCreated,
+  });
 
   beforeEach(() => {
     createFilter.mockReset();
@@ -40,7 +45,20 @@ describe("FiltersService", () => {
     updateFilterById.mockReset();
     deleteFilterById.mockReset();
     countFiltersByUser.mockReset();
+    dispatchFilterCreated.mockReset();
     envState.ENFORCE_MIN_ONE_FILTER = false;
+  });
+
+  it("dispatches filter created trigger on create", async () => {
+    createFilter.mockResolvedValue({ id: "filter-1" });
+
+    const result = await service.createFilter("user-1", { location: "Douglas" });
+
+    expect(result).toEqual({ id: "filter-1" });
+    expect(dispatchFilterCreated).toHaveBeenCalledWith({
+      filterId: "filter-1",
+      userId: "user-1",
+    });
   });
 
   it("updates existing filter", async () => {
