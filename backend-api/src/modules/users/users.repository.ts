@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { usersTable } from "../../repositories/schema";
+import { DuplicateEmailError } from "./users.errors";
 import type { NewUser, User } from "./user.types";
 
 const mapUser = (row: typeof usersTable.$inferSelect): User => {
@@ -39,20 +40,39 @@ export class UsersRepository {
   }
 
   async createUser(input: NewUser): Promise<User> {
-    const user = await db
-      .insert(usersTable)
-      .values({
-        email: input.email,
-        passwordHash: input.passwordHash,
-        status: input.status ?? "active",
-      })
-      .returning()
-      .then((rows) => rows.at(0));
+    let user: typeof usersTable.$inferSelect | undefined;
+
+    try {
+      user = await db
+        .insert(usersTable)
+        .values({
+          email: input.email,
+          passwordHash: input.passwordHash,
+          status: input.status ?? "active",
+        })
+        .returning()
+        .then((rows) => rows.at(0));
+    } catch (error: unknown) {
+      if (this.isUniqueViolation(error)) {
+        throw new DuplicateEmailError(input.email);
+      }
+
+      throw error;
+    }
 
     if (!user) {
       throw new Error("Failed to create user");
     }
 
     return mapUser(user);
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      (error as { code?: string }).code === "23505"
+    );
   }
 }

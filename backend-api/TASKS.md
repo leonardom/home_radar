@@ -19,7 +19,7 @@ Goal: Implement user registration with email/password, unique email validation, 
 - [x] Implement password hashing (argon2 or bcrypt).
 - [x] Implement POST /auth/register endpoint.
 - [x] Return safe response without passwordHash.
-- [ ] Handle duplicate email and validation errors.
+- [x] Handle duplicate email and validation errors.
 - [ ] Add unit tests for hashing and validation.
 - [ ] Add integration tests for registration success/failure cases.
 
