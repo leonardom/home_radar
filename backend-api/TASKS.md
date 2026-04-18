@@ -132,6 +132,47 @@ Goal: Persist user-property matches and guarantee no duplicates.
 - [ ] Add unit tests for deduplication and repository conflict behavior.
 - [ ] Add integration tests validating stored matches and duplicate prevention.
 
+## Task 8 - Properties Serving Model (MVP Integration)
+
+Goal: Introduce a backend-api `properties` read model while keeping scraper table name as `listings`.
+
+### Subtasks
+
+- [x] Define `properties` table schema in backend-api (id, source, externalListingId, title, price, bedrooms, bathrooms, location, propertyType, url, firstSeenAt, lastSeenAt, status, createdAt, updatedAt).
+- [x] Add unique constraint for source identity (`source + external_listing_id`).
+- [x] Add indexes for API and matching queries (`status`, `price`, `bedrooms`, `location`, `property_type`, `last_seen_at`).
+- [x] Add migration scripts for `properties` table and indexes.
+- [x] Implement backend repository methods for property upsert and query by external identity.
+- [x] Define normalization mapper from scraper `listings` shape to backend `properties` shape.
+
+## Task 9 - Listings -> Properties Sync Pipeline (MVP Pull Strategy)
+
+Goal: Build a simple incremental sync that reads scraper `listings` and upserts backend `properties`.
+
+### Subtasks
+
+- [ ] Define sync contract for source fields read from scraper `listings` (required/optional/defaults).
+- [ ] Implement watermark-based incremental fetch (`updated_at > last_sync_at`) from scraper database.
+- [ ] Add sync checkpoint storage in backend-api (`sync_state` table or equivalent) per source.
+- [ ] Implement idempotent upsert flow in backend-api for each fetched listing.
+- [ ] Implement inactive handling when listing disappears or is marked unavailable (soft status change in `properties`).
+- [ ] Add command/script to run full backfill from existing scraper `listings`.
+- [ ] Add command/script to run incremental sync (cron-friendly).
+- [ ] Ensure sync process emits `property.created` and `property.updated` triggers for Task 6 pipeline.
+
+## Task 10 - Sync Reliability and Visibility (MVP)
+
+Goal: Make sync safe to operate in production-like environments with clear observability.
+
+### Subtasks
+
+- [ ] Add structured logging for sync start/end, counts, duration, and failures.
+- [ ] Add retry policy for transient DB failures during read/upsert.
+- [ ] Add dead-letter/error capture for malformed listings and continue processing.
+- [ ] Add health/diagnostic endpoint or admin query for last successful sync time and lag.
+- [ ] Add unit tests for mapper, watermark progression, and idempotent upsert behavior.
+- [ ] Add integration tests for backfill and incremental sync scenarios.
+
 ## Notes
 
 - Update each checkbox as work progresses.
