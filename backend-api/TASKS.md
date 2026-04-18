@@ -106,8 +106,8 @@ Goal: Trigger matching automatically when properties or filters change.
 ### Subtasks
 
 - [x] Define trigger events and payload contracts for `property.created`, `property.updated`, and `filter.created`.
-- [ ] Add integration point in property creation flow to dispatch matching job/event.
-- [ ] Add integration point in property update flow to dispatch matching job/event.
+- [x] Add integration point in property creation flow to dispatch matching job/event.
+- [x] Add integration point in property update flow to dispatch matching job/event.
 - [x] Add integration point in filter creation flow to dispatch matching job/event.
 - [x] Implement trigger handler to resolve target entity and invoke matching service.
 - [x] Add idempotency guard so repeated trigger delivery does not duplicate processing side effects.
