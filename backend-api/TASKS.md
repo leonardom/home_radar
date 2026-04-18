@@ -151,14 +151,14 @@ Goal: Build a simple incremental sync that reads scraper `listings` and upserts 
 
 ### Subtasks
 
-- [ ] Define sync contract for source fields read from scraper `listings` (required/optional/defaults).
-- [ ] Implement watermark-based incremental fetch (`updated_at > last_sync_at`) from scraper database.
-- [ ] Add sync checkpoint storage in backend-api (`sync_state` table or equivalent) per source.
-- [ ] Implement idempotent upsert flow in backend-api for each fetched listing.
-- [ ] Implement inactive handling when listing disappears or is marked unavailable (soft status change in `properties`).
-- [ ] Add command/script to run full backfill from existing scraper `listings`.
-- [ ] Add command/script to run incremental sync (cron-friendly).
-- [ ] Ensure sync process emits `property.created` and `property.updated` triggers for Task 6 pipeline.
+- [x] Define sync contract for source fields read from scraper `listings` (required/optional/defaults).
+- [x] Implement watermark-based incremental fetch (`updated_at > last_sync_at`) from scraper database.
+- [x] Add sync checkpoint storage in backend-api (`sync_state` table or equivalent) per source.
+- [x] Implement idempotent upsert flow in backend-api for each fetched listing.
+- [x] Implement inactive handling when listing disappears or is marked unavailable (soft status change in `properties`).
+- [x] Add command/script to run full backfill from existing scraper `listings`.
+- [x] Add command/script to run incremental sync (cron-friendly).
+- [x] Ensure sync process emits `property.created` and `property.updated` triggers for Task 6 pipeline.
 
 ## Task 10 - Sync Reliability and Visibility (MVP)
 

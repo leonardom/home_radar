@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { propertiesTable } from "../../database/schema";
@@ -81,5 +81,56 @@ export class PropertiesRepository {
       .then((rows) => rows.at(0) ?? null);
 
     return property ? mapProperty(property) : null;
+  }
+
+  async markInactiveMissingForSource(
+    source: string,
+    seenExternalListingIds: string[],
+    now: Date = new Date(),
+  ): Promise<number> {
+    if (seenExternalListingIds.length === 0) {
+      const rows = await db
+        .update(propertiesTable)
+        .set({ status: "inactive", updatedAt: now })
+        .where(and(eq(propertiesTable.source, source), ne(propertiesTable.status, "inactive")))
+        .returning({ id: propertiesTable.id });
+
+      return rows.length;
+    }
+
+    const activeRows = await db
+      .select({ id: propertiesTable.id })
+      .from(propertiesTable)
+      .where(and(eq(propertiesTable.source, source), eq(propertiesTable.status, "active")));
+
+    const activeIds = activeRows.map((row) => row.id);
+    if (activeIds.length === 0) {
+      return 0;
+    }
+
+    const keepRows = await db
+      .select({ id: propertiesTable.id })
+      .from(propertiesTable)
+      .where(
+        and(
+          eq(propertiesTable.source, source),
+          inArray(propertiesTable.externalListingId, seenExternalListingIds),
+        ),
+      );
+
+    const keepIdSet = new Set(keepRows.map((row) => row.id));
+    const deactivateIds = activeIds.filter((id) => !keepIdSet.has(id));
+
+    if (deactivateIds.length === 0) {
+      return 0;
+    }
+
+    const updated = await db
+      .update(propertiesTable)
+      .set({ status: "inactive", updatedAt: now })
+      .where(inArray(propertiesTable.id, deactivateIds))
+      .returning({ id: propertiesTable.id });
+
+    return updated.length;
   }
 }

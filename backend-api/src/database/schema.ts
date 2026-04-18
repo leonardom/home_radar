@@ -80,3 +80,16 @@ export const propertiesTable = pgTable(
     lastSeenAtIdx: index("properties_last_seen_at_idx").on(table.lastSeenAt),
   }),
 );
+
+export const syncStateTable = pgTable(
+  "sync_state",
+  {
+    key: varchar("key", { length: 120 }).primaryKey(),
+    lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    lastSyncAtIdx: index("sync_state_last_sync_at_idx").on(table.lastSyncAt),
+  }),
+);

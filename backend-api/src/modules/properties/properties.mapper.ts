@@ -87,9 +87,12 @@ export const mapScraperListingToUpsertProperty = (
   defaultSource?: string,
   now: Date = new Date(),
 ): UpsertPropertyInput => {
-  const externalListingId = String(listing.id ?? "").trim();
+  const externalListingId =
+    normalizeText(listing.external_listing_id) ??
+    normalizeText(listing.listing_url) ??
+    String(listing.id ?? "").trim();
   if (externalListingId.length === 0) {
-    throw new Error("Listing id is required to map property");
+    throw new Error("Listing external identity is required to map property");
   }
 
   const source = normalizeText(listing.source) ?? normalizeText(defaultSource);
@@ -98,21 +101,27 @@ export const mapScraperListingToUpsertProperty = (
   }
 
   const title = normalizeText(listing.title) ?? `Listing ${externalListingId}`;
-  const location = normalizeText(listing.location);
+  const location = normalizeText(listing.location) ?? normalizeText(listing.region);
   const url = normalizeText(listing.url) ?? normalizeText(listing.listing_url);
 
   return {
     source,
     externalListingId,
     title,
-    price: parseNullableInt(listing.price),
-    bedrooms: parseNullableInt(listing.bedrooms),
-    bathrooms: parseNullableInt(listing.bathrooms),
+    price: parseNullableInt(listing.price_value ?? listing.price),
+    bedrooms: parseNullableInt(listing.bedrooms ?? listing.beds),
+    bathrooms: parseNullableInt(listing.bathrooms ?? listing.baths),
     location,
     propertyType: normalizePropertyType(listing.propertyType ?? listing.property_type),
     url,
-    firstSeenAt: parseDate(listing.first_seen_at ?? listing.created_at ?? null, now),
-    lastSeenAt: parseDate(listing.last_seen_at ?? listing.updated_at ?? null, now),
+    firstSeenAt: parseDate(
+      listing.first_seen_at ?? listing.created_at ?? listing.scraped_at ?? null,
+      now,
+    ),
+    lastSeenAt: parseDate(
+      listing.last_seen_at ?? listing.updated_at ?? listing.scraped_at ?? null,
+      now,
+    ),
     status: normalizeStatus(listing.status),
   };
 };

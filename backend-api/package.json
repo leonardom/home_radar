@@ -14,7 +14,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "sync:backfill": "tsx src/modules/properties/sync.cli.ts backfill",
+    "sync:incremental": "tsx src/modules/properties/sync.cli.ts incremental"
   },
   "keywords": [],
   "author": "",
