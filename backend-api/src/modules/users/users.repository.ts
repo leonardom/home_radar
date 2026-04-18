@@ -1,9 +1,10 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { usersTable } from "../../repositories/schema";
 import { DuplicateEmailError } from "./users.errors";
 import type { NewUser, User } from "./user.types";
+import type { UpdateProfileRequest } from "./users.schemas";
 
 const mapUser = (row: typeof usersTable.$inferSelect): User => {
   return {
@@ -13,6 +14,7 @@ const mapUser = (row: typeof usersTable.$inferSelect): User => {
     status: row.status as User["status"],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    deletedAt: row.deletedAt,
   };
 };
 
@@ -65,6 +67,46 @@ export class UsersRepository {
     }
 
     return mapUser(user);
+  }
+
+  async updateProfile(id: string, payload: UpdateProfileRequest): Promise<User | null> {
+    let user: typeof usersTable.$inferSelect | undefined;
+
+    try {
+      user = await db
+        .update(usersTable)
+        .set({
+          ...(payload.email ? { email: payload.email } : {}),
+          updatedAt: new Date(),
+        })
+        .where(and(eq(usersTable.id, id), eq(usersTable.status, "active")))
+        .returning()
+        .then((rows) => rows.at(0));
+    } catch (error: unknown) {
+      if (this.isUniqueViolation(error) && payload.email) {
+        throw new DuplicateEmailError(payload.email);
+      }
+
+      throw error;
+    }
+
+    return user ? mapUser(user) : null;
+  }
+
+  async softDeleteById(id: string): Promise<boolean> {
+    const deletedAt = new Date();
+    const user = await db
+      .update(usersTable)
+      .set({
+        status: "deleted",
+        deletedAt,
+        updatedAt: deletedAt,
+      })
+      .where(and(eq(usersTable.id, id), eq(usersTable.status, "active")))
+      .returning({ id: usersTable.id })
+      .then((rows) => rows.at(0));
+
+    return Boolean(user);
   }
 
   private isUniqueViolation(error: unknown): boolean {

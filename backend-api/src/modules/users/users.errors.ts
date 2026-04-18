@@ -4,3 +4,10 @@ export class DuplicateEmailError extends Error {
     this.name = "DuplicateEmailError";
   }
 }
+
+export class ProfileNotFoundError extends Error {
+  constructor() {
+    super("Profile not found");
+    this.name = "ProfileNotFoundError";
+  }
+}

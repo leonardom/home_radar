@@ -1,7 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { ZodError } from "zod";
 
-import { requireAuth } from "./auth.middleware";
 import { AuthService } from "./auth.service";
 import { InvalidCredentialsError, InvalidRefreshTokenError } from "./auth.errors";
 import { RefreshTokensRepository } from "./refresh-tokens.repository";
@@ -12,7 +11,6 @@ import { RegisterResponseSchema } from "./register.responses";
 import { RegisterRequestSchema } from "./register.schemas";
 import { RegisterService } from "./register.service";
 import {
-  AuthProfileResponseSchema,
   AuthTokensResponseSchema,
   LoginRequestSchema,
   RefreshRequestSchema,
@@ -135,27 +133,5 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
 
       throw error;
     }
-  });
-
-  app.get("/auth/me", { preHandler: requireAuth }, async (request, reply) => {
-    const authUser = request.authUser;
-
-    if (!authUser) {
-      return reply.code(401).send({ message: "Unauthorized" });
-    }
-
-    const user = await usersRepository.findById(authUser.sub);
-
-    if (!user) {
-      return reply.code(401).send({ message: "Unauthorized" });
-    }
-
-    const response = AuthProfileResponseSchema.parse({
-      id: user.id,
-      email: user.email,
-      status: user.status,
-    });
-
-    return reply.code(200).send(response);
   });
 };

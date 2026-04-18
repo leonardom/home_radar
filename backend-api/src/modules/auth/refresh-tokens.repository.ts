@@ -44,4 +44,11 @@ export class RefreshTokensRepository {
       .set({ revokedAt: new Date() })
       .where(eq(refreshTokensTable.tokenHash, tokenHash));
   }
+
+  async revokeByUserId(userId: string): Promise<void> {
+    await db
+      .update(refreshTokensTable)
+      .set({ revokedAt: new Date() })
+      .where(eq(refreshTokensTable.userId, userId));
+  }
 }

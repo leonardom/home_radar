@@ -47,16 +47,18 @@ Goal: Allow authenticated users to retrieve, update, and delete their profile.
 
 ### Subtasks
 
-- [ ] Implement GET /users/me endpoint.
-- [ ] Implement PATCH /users/me endpoint.
-- [ ] Define and validate editable fields for profile updates.
-- [ ] Implement DELETE /users/me endpoint.
-- [ ] Revoke all user refresh tokens when account is deleted.
-- [ ] Decide and implement deletion strategy (soft delete or hard delete).
-- [ ] Enforce authorization so users can only access their own profile.
-- [ ] Standardize profile route response and error contracts.
-- [ ] Add unit tests for update and delete logic.
-- [ ] Add integration tests for retrieve/update/delete profile flows.
+- [x] Implement GET /users/me endpoint.
+- [x] Implement PATCH /users/me endpoint.
+- [x] Define and validate editable fields for profile updates.
+- [x] Implement DELETE /users/me endpoint.
+- [x] Revoke all user refresh tokens when account is deleted.
+- [x] Decide and implement deletion strategy (soft delete or hard delete).
+- [x] Enforce authorization so users can only access their own profile.
+- [x] Standardize profile route response and error contracts.
+- [x] Add unit tests for update and delete logic.
+- [x] Add integration tests for retrieve/update/delete profile flows.
+
+Deletion strategy selected: soft delete (`status=deleted`, `deletedAt` timestamp).
 
 ## Notes
 

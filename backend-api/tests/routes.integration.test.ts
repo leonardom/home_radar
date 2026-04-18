@@ -17,6 +17,7 @@ const {
   refreshFindActiveByTokenHashMock,
   refreshRevokeByIdMock,
   refreshRevokeByTokenHashMock,
+  refreshRevokeByUserIdMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -34,6 +35,7 @@ const {
     refreshFindActiveByTokenHashMock: vi.fn<() => Promise<unknown>>(),
     refreshRevokeByIdMock: vi.fn<() => Promise<void>>(),
     refreshRevokeByTokenHashMock: vi.fn<() => Promise<void>>(),
+    refreshRevokeByUserIdMock: vi.fn<() => Promise<void>>(),
   };
 });
 
@@ -50,6 +52,8 @@ vi.mock("../src/modules/users/users.repository", () => {
     createUser = createUserMock;
     findByEmail = findByEmailMock;
     findById = findByIdMock;
+    updateProfile = findByIdMock;
+    softDeleteById = vi.fn<() => Promise<boolean>>().mockResolvedValue(true);
   }
 
   return { UsersRepository };
@@ -82,6 +86,7 @@ vi.mock("../src/modules/auth/refresh-tokens.repository", () => {
     findActiveByTokenHash = refreshFindActiveByTokenHashMock;
     revokeById = refreshRevokeByIdMock;
     revokeByTokenHash = refreshRevokeByTokenHashMock;
+    revokeByUserId = refreshRevokeByUserIdMock;
   }
 
   return { RefreshTokensRepository };
@@ -106,6 +111,7 @@ describe("API routes", () => {
     refreshFindActiveByTokenHashMock.mockReset();
     refreshRevokeByIdMock.mockReset();
     refreshRevokeByTokenHashMock.mockReset();
+    refreshRevokeByUserIdMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -133,6 +139,7 @@ describe("API routes", () => {
     });
     refreshRevokeByIdMock.mockResolvedValue(undefined);
     refreshRevokeByTokenHashMock.mockResolvedValue(undefined);
+    refreshRevokeByUserIdMock.mockResolvedValue(undefined);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -149,6 +156,7 @@ describe("API routes", () => {
       status: "active",
       createdAt: new Date("2026-04-18T12:00:00.000Z"),
       updatedAt: new Date("2026-04-18T12:00:00.000Z"),
+      deletedAt: null,
     });
 
     createUserMock.mockResolvedValue({
@@ -334,7 +342,7 @@ describe("API routes", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/api/auth/me",
+      url: "/api/users/me",
       headers: {
         authorization: "Bearer access-token",
       },
@@ -345,6 +353,9 @@ describe("API routes", () => {
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
       email: "user@example.com",
       status: "active",
+      createdAt: "2026-04-18T12:00:00.000Z",
+      updatedAt: "2026-04-18T12:00:00.000Z",
+      deletedAt: null,
     });
 
     await app.close();
@@ -355,10 +366,74 @@ describe("API routes", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: "/api/auth/me",
+      url: "/api/users/me",
     });
 
     expect(response.statusCode).toBe(401);
+
+    await app.close();
+  });
+
+  it("updates authenticated profile", async () => {
+    findByIdMock.mockResolvedValueOnce({
+      id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      email: "updated@example.com",
+      passwordHash: "hashed-password",
+      status: "active",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T13:00:00.000Z"),
+      deletedAt: null,
+    });
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/users/me",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        email: "updated@example.com",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().email).toBe("updated@example.com");
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid profile update payload", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/users/me",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("soft deletes account and revokes all refresh tokens", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/users/me",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(refreshRevokeByUserIdMock).toHaveBeenCalledTimes(1);
 
     await app.close();
   });

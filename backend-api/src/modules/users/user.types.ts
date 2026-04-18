@@ -7,6 +7,7 @@ export type User = {
   status: UserStatus;
   createdAt: Date;
   updatedAt: Date;
+  deletedAt: Date | null;
 };
 
 export type NewUser = Pick<User, "email" | "passwordHash"> & {

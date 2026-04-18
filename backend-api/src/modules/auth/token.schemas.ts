@@ -20,12 +20,6 @@ export const AuthTokensResponseSchema = z.object({
   expiresIn: z.number().int().positive(),
 });
 
-export const AuthProfileResponseSchema = z.object({
-  id: z.uuid(),
-  email: z.string().email(),
-  status: z.enum(["active", "deleted"]),
-});
-
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type RefreshRequest = z.infer<typeof RefreshRequestSchema>;
 export type AuthTokensResponse = z.infer<typeof AuthTokensResponseSchema>;
