@@ -23,6 +23,10 @@ const {
   updateFilterByIdMock,
   deleteFilterByIdMock,
   countFiltersByUserMock,
+  createMatchMock,
+  findMatchMock,
+  listMatchesByUserMock,
+  listMatchesByPropertyMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -46,6 +50,10 @@ const {
     updateFilterByIdMock: vi.fn<() => Promise<unknown>>(),
     deleteFilterByIdMock: vi.fn<() => Promise<boolean>>(),
     countFiltersByUserMock: vi.fn<() => Promise<number>>(),
+    createMatchMock: vi.fn<() => Promise<unknown>>(),
+    findMatchMock: vi.fn<() => Promise<unknown>>(),
+    listMatchesByUserMock: vi.fn<() => Promise<unknown[]>>(),
+    listMatchesByPropertyMock: vi.fn<() => Promise<unknown[]>>(),
   };
 });
 
@@ -114,6 +122,17 @@ vi.mock("../src/modules/filters/filters.repository", () => {
   return { FiltersRepository };
 });
 
+vi.mock("../src/modules/matches/matches.repository", () => {
+  class MatchesRepository {
+    createMatch = createMatchMock;
+    findMatch = findMatchMock;
+    listMatchesByUser = listMatchesByUserMock;
+    listMatchesByProperty = listMatchesByPropertyMock;
+  }
+
+  return { MatchesRepository };
+});
+
 import { buildApp } from "../src/app";
 
 describe("API routes", () => {
@@ -139,6 +158,10 @@ describe("API routes", () => {
     updateFilterByIdMock.mockReset();
     deleteFilterByIdMock.mockReset();
     countFiltersByUserMock.mockReset();
+    createMatchMock.mockReset();
+    findMatchMock.mockReset();
+    listMatchesByUserMock.mockReset();
+    listMatchesByPropertyMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -189,6 +212,21 @@ describe("API routes", () => {
     listFiltersByUserMock.mockResolvedValue([filterFixture]);
     updateFilterByIdMock.mockResolvedValue(filterFixture);
     deleteFilterByIdMock.mockResolvedValue(true);
+
+    const matchFixture = {
+      id: "c0cc3103-c012-46e0-b7b0-1f4299a58f0f",
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      propertyId: "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+      filterId: "ceffb7eb-cded-4a75-8a5e-53f7f3f577f7",
+      matchReasons: ["price_range", "location"],
+      matchedAt: new Date("2026-04-18T12:00:00.000Z"),
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+    };
+
+    createMatchMock.mockResolvedValue(matchFixture);
+    findMatchMock.mockResolvedValue(matchFixture);
+    listMatchesByUserMock.mockResolvedValue([matchFixture]);
+    listMatchesByPropertyMock.mockResolvedValue([matchFixture]);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -602,6 +640,24 @@ describe("API routes", () => {
     });
 
     expect(response.statusCode).toBe(404);
+
+    await app.close();
+  });
+
+  it("lists authenticated user matches", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/matches/me",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().items).toHaveLength(1);
+    expect(response.json().items[0].matchReasons).toEqual(["price_range", "location"]);
 
     await app.close();
   });

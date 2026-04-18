@@ -121,16 +121,16 @@ Goal: Persist user-property matches and guarantee no duplicates.
 
 ### Subtasks
 
-- [ ] Define `matches` table schema (id, userId, propertyId, filterId, matchedAt, createdAt).
-- [ ] Add foreign keys to users/properties/filters with appropriate delete behavior.
-- [ ] Add unique constraint/index to prevent duplicate matches (at least on `userId + propertyId`).
-- [ ] Implement repository methods: createMatch, findMatch, listMatchesByUser, listMatchesByProperty.
-- [ ] Implement upsert or conflict-ignore strategy for duplicate-safe inserts.
-- [ ] Persist match reason/metadata if required by the matching contract.
-- [ ] Add service layer orchestration to write all new matches from trigger results.
-- [ ] Add endpoint/retrieval contract for viewing stored matches (if exposed in MVP scope).
-- [ ] Add unit tests for deduplication and repository conflict behavior.
-- [ ] Add integration tests validating stored matches and duplicate prevention.
+- [x] Define `matches` table schema (id, userId, propertyId, filterId, matchedAt, createdAt).
+- [x] Add foreign keys to users/properties/filters with appropriate delete behavior.
+- [x] Add unique constraint/index to prevent duplicate matches (at least on `userId + propertyId`).
+- [x] Implement repository methods: createMatch, findMatch, listMatchesByUser, listMatchesByProperty.
+- [x] Implement upsert or conflict-ignore strategy for duplicate-safe inserts.
+- [x] Persist match reason/metadata if required by the matching contract.
+- [x] Add service layer orchestration to write all new matches from trigger results.
+- [x] Add endpoint/retrieval contract for viewing stored matches (if exposed in MVP scope).
+- [x] Add unit tests for deduplication and repository conflict behavior.
+- [x] Add integration tests validating stored matches and duplicate prevention.
 
 ## Task 8 - Properties Serving Model (MVP Integration)
 

@@ -93,3 +93,30 @@ export const syncStateTable = pgTable(
     lastSyncAtIdx: index("sync_state_last_sync_at_idx").on(table.lastSyncAt),
   }),
 );
+
+export const matchesTable = pgTable(
+  "matches",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => propertiesTable.id, { onDelete: "cascade" }),
+    filterId: uuid("filter_id").references(() => searchFiltersTable.id, { onDelete: "set null" }),
+    matchReasons: text("match_reasons").array().notNull().default([]),
+    matchedAt: timestamp("matched_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userPropertyUnique: uniqueIndex("matches_user_property_unique").on(
+      table.userId,
+      table.propertyId,
+    ),
+    userIdIdx: index("matches_user_id_idx").on(table.userId),
+    propertyIdIdx: index("matches_property_id_idx").on(table.propertyId),
+    filterIdIdx: index("matches_filter_id_idx").on(table.filterId),
+    matchedAtIdx: index("matches_matched_at_idx").on(table.matchedAt),
+  }),
+);
