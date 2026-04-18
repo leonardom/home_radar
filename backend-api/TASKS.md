@@ -166,12 +166,12 @@ Goal: Make sync safe to operate in production-like environments with clear obser
 
 ### Subtasks
 
-- [ ] Add structured logging for sync start/end, counts, duration, and failures.
-- [ ] Add retry policy for transient DB failures during read/upsert.
-- [ ] Add dead-letter/error capture for malformed listings and continue processing.
-- [ ] Add health/diagnostic endpoint or admin query for last successful sync time and lag.
-- [ ] Add unit tests for mapper, watermark progression, and idempotent upsert behavior.
-- [ ] Add integration tests for backfill and incremental sync scenarios.
+- [x] Add structured logging for sync start/end, counts, duration, and failures.
+- [x] Add retry policy for transient DB failures during read/upsert.
+- [x] Add dead-letter/error capture for malformed listings and continue processing.
+- [x] Add health/diagnostic endpoint or admin query for last successful sync time and lag.
+- [x] Add unit tests for mapper, watermark progression, and idempotent upsert behavior.
+- [x] Add integration tests for backfill and incremental sync scenarios.
 
 ## Notes
 

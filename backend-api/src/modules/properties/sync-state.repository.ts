@@ -26,4 +26,15 @@ export class SyncStateRepository {
         },
       });
   }
+
+  async listStates(): Promise<Array<{ key: string; lastSyncAt: Date | null }>> {
+    const rows = await db
+      .select({
+        key: syncStateTable.key,
+        lastSyncAt: syncStateTable.lastSyncAt,
+      })
+      .from(syncStateTable);
+
+    return rows;
+  }
 }

@@ -94,6 +94,23 @@ export const syncStateTable = pgTable(
   }),
 );
 
+export const syncDeadLettersTable = pgTable(
+  "sync_dead_letters",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    syncKey: varchar("sync_key", { length: 120 }).notNull(),
+    source: varchar("source", { length: 100 }),
+    externalListingId: varchar("external_listing_id", { length: 255 }),
+    payload: text("payload").notNull(),
+    errorMessage: text("error_message").notNull(),
+    failedAt: timestamp("failed_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    syncKeyIdx: index("sync_dead_letters_sync_key_idx").on(table.syncKey),
+    failedAtIdx: index("sync_dead_letters_failed_at_idx").on(table.failedAt),
+  }),
+);
+
 export const matchesTable = pgTable(
   "matches",
   {

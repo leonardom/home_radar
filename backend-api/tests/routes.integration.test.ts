@@ -27,6 +27,7 @@ const {
   findMatchMock,
   listMatchesByUserMock,
   listMatchesByPropertyMock,
+  listSyncStatesMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -54,6 +55,7 @@ const {
     findMatchMock: vi.fn<() => Promise<unknown>>(),
     listMatchesByUserMock: vi.fn<() => Promise<unknown[]>>(),
     listMatchesByPropertyMock: vi.fn<() => Promise<unknown[]>>(),
+    listSyncStatesMock: vi.fn<() => Promise<unknown[]>>(),
   };
 });
 
@@ -133,6 +135,16 @@ vi.mock("../src/modules/matches/matches.repository", () => {
   return { MatchesRepository };
 });
 
+vi.mock("../src/modules/properties/sync-state.repository", () => {
+  class SyncStateRepository {
+    getLastSyncAt = vi.fn();
+    setLastSyncAt = vi.fn();
+    listStates = listSyncStatesMock;
+  }
+
+  return { SyncStateRepository };
+});
+
 import { buildApp } from "../src/app";
 
 describe("API routes", () => {
@@ -162,6 +174,7 @@ describe("API routes", () => {
     findMatchMock.mockReset();
     listMatchesByUserMock.mockReset();
     listMatchesByPropertyMock.mockReset();
+    listSyncStatesMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -227,6 +240,12 @@ describe("API routes", () => {
     findMatchMock.mockResolvedValue(matchFixture);
     listMatchesByUserMock.mockResolvedValue([matchFixture]);
     listMatchesByPropertyMock.mockResolvedValue([matchFixture]);
+    listSyncStatesMock.mockResolvedValue([
+      {
+        key: "scraper:listings:all",
+        lastSyncAt: new Date("2026-04-18T11:58:00.000Z"),
+      },
+    ]);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -658,6 +677,24 @@ describe("API routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().items).toHaveLength(1);
     expect(response.json().items[0].matchReasons).toEqual(["price_range", "location"]);
+
+    await app.close();
+  });
+
+  it("returns sync diagnostic status", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/sync/status",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().states).toHaveLength(1);
+    expect(response.json().states[0].key).toBe("scraper:listings:all");
 
     await app.close();
   });

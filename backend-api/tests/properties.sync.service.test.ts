@@ -12,6 +12,12 @@ describe("PropertiesSyncService", () => {
   const setLastSyncAt = vi.fn();
   const dispatchPropertyCreated = vi.fn();
   const dispatchPropertyUpdated = vi.fn();
+  const createDeadLetter = vi.fn();
+  const logger = {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  };
 
   const service = new PropertiesSyncService(
     { fetchIncremental, fetchAllBySource } as never,
@@ -22,6 +28,9 @@ describe("PropertiesSyncService", () => {
       dispatchPropertyUpdated,
       dispatchFilterCreated: vi.fn(),
     },
+    { createDeadLetter },
+    logger,
+    3,
   );
 
   beforeEach(() => {
@@ -34,6 +43,10 @@ describe("PropertiesSyncService", () => {
     setLastSyncAt.mockReset();
     dispatchPropertyCreated.mockReset();
     dispatchPropertyUpdated.mockReset();
+    createDeadLetter.mockReset();
+    logger.info.mockReset();
+    logger.warn.mockReset();
+    logger.error.mockReset();
 
     markInactiveMissingForSource.mockResolvedValue(0);
     setLastSyncAt.mockResolvedValue(undefined);
@@ -81,6 +94,7 @@ describe("PropertiesSyncService", () => {
     expect(result.created).toBe(1);
     expect(result.updated).toBe(1);
     expect(result.deactivated).toBe(0);
+    expect(result.deadLetters).toBe(0);
   });
 
   it("runs backfill and deactivates missing properties by source", async () => {
@@ -114,5 +128,90 @@ describe("PropertiesSyncService", () => {
     ]);
     expect(result.mode).toBe("backfill");
     expect(result.deactivated).toBe(3);
+    expect(result.deadLetters).toBe(0);
+  });
+
+  it("retries transient upsert failures", async () => {
+    getLastSyncAt.mockResolvedValue(new Date("2026-04-18T11:00:00.000Z"));
+    fetchIncremental.mockResolvedValue([
+      {
+        id: 1,
+        source: "chrystals",
+        listing_url: "https://example.com/1",
+        title: "A",
+        updated_at: "2026-04-18T12:00:00.000Z",
+      },
+    ]);
+
+    findBySourceIdentity.mockResolvedValue(null);
+    upsertProperty.mockRejectedValueOnce(new Error("transient")).mockResolvedValueOnce({
+      id: "created-after-retry",
+    });
+
+    const result = await service.runIncremental("chrystals");
+
+    expect(result.created).toBe(1);
+    expect(upsertProperty).toHaveBeenCalledTimes(2);
+    expect(logger.warn).toHaveBeenCalled();
+  });
+
+  it("captures malformed listing to dead-letter and continues", async () => {
+    getLastSyncAt.mockResolvedValue(null);
+    fetchIncremental.mockResolvedValue([
+      {
+        id: 1,
+        source: "chrystals",
+        listing_url: "https://example.com/1",
+        title: "A",
+        updated_at: "2026-04-18T12:00:00.000Z",
+      },
+      {
+        id: "",
+        listing_url: "",
+        updated_at: "2026-04-18T12:05:00.000Z",
+      },
+    ]);
+
+    findBySourceIdentity.mockResolvedValue(null);
+    upsertProperty.mockResolvedValue({ id: "created-property" });
+
+    const result = await service.runIncremental("all");
+
+    expect(result.fetched).toBe(2);
+    expect(result.created).toBe(1);
+    expect(result.deadLetters).toBe(1);
+    expect(createDeadLetter).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps idempotent behavior by creating then updating same listing identity", async () => {
+    getLastSyncAt.mockResolvedValue(null);
+    fetchIncremental.mockResolvedValue([
+      {
+        id: 1,
+        source: "chrystals",
+        listing_url: "https://example.com/same",
+        title: "A",
+        updated_at: "2026-04-18T12:00:00.000Z",
+      },
+      {
+        id: 1,
+        source: "chrystals",
+        listing_url: "https://example.com/same",
+        title: "A2",
+        updated_at: "2026-04-18T12:01:00.000Z",
+      },
+    ]);
+
+    findBySourceIdentity.mockResolvedValueOnce(null).mockResolvedValueOnce({ id: "exists" });
+    upsertProperty
+      .mockResolvedValueOnce({ id: "same-property-id" })
+      .mockResolvedValueOnce({ id: "same-property-id" });
+
+    const result = await service.runIncremental("chrystals");
+
+    expect(result.created).toBe(1);
+    expect(result.updated).toBe(1);
+    expect(dispatchPropertyCreated).toHaveBeenCalledTimes(1);
+    expect(dispatchPropertyUpdated).toHaveBeenCalledTimes(1);
   });
 });

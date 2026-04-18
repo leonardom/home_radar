@@ -50,6 +50,7 @@ const run = async (): Promise<void> => {
     created: result.created,
     updated: result.updated,
     deactivated: result.deactivated,
+    deadLetters: result.deadLetters,
     lastSyncAt: result.lastSyncAt?.toISOString() ?? null,
   });
 
