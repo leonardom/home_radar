@@ -1,0 +1,72 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.hypothesis/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+build/
+dist/
+.eggs/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Local databases / runtime files
+*.db
+*.sqlite
+*.sqlite3
+*.log
+*.pid
+celerybeat-schedule
+
+# Node/JS monorepo artifacts (if present)
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.turbo/
+.next/
+coverage/
+
+# Terraform / infra local state
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Misc
+tmp/
+temp/
