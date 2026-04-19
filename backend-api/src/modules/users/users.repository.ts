@@ -9,6 +9,7 @@ import type { UpdateProfileRequest } from "./users.schemas";
 const mapUser = (row: typeof usersTable.$inferSelect): User => {
   return {
     id: row.id,
+    name: row.name,
     email: row.email,
     passwordHash: row.passwordHash,
     status: row.status as User["status"],
@@ -48,6 +49,7 @@ export class UsersRepository {
       user = await db
         .insert(usersTable)
         .values({
+          name: input.name,
           email: input.email,
           passwordHash: input.passwordHash,
           status: input.status ?? "active",
@@ -76,6 +78,7 @@ export class UsersRepository {
       user = await db
         .update(usersTable)
         .set({
+          ...(payload.name ? { name: payload.name } : {}),
           ...(payload.email ? { email: payload.email } : {}),
           updatedAt: new Date(),
         })

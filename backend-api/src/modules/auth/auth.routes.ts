@@ -37,6 +37,7 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
 
       const safeResponse = RegisterResponseSchema.parse({
         id: user.id,
+        name: user.name,
         email: user.email,
         status: user.status,
         createdAt: user.createdAt.toISOString(),

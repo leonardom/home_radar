@@ -249,6 +249,7 @@ describe("API routes", () => {
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
       email: "user@example.com",
       passwordHash: "hashed-password",
       status: "active",
@@ -257,6 +258,7 @@ describe("API routes", () => {
     });
     findByIdMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
       email: "user@example.com",
       passwordHash: "hashed-password",
       status: "active",
@@ -267,6 +269,7 @@ describe("API routes", () => {
 
     createUserMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
       email: "user@example.com",
       passwordHash: "hashed-password",
       status: "active",
@@ -296,6 +299,7 @@ describe("API routes", () => {
       method: "POST",
       url: "/api/auth/register",
       payload: {
+        name: "User Example",
         email: "User@Example.com",
         password: "StrongPass123",
       },
@@ -304,6 +308,7 @@ describe("API routes", () => {
     expect(response.statusCode).toBe(201);
     expect(response.json()).toMatchObject({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
       email: "user@example.com",
       status: "active",
     });
@@ -319,6 +324,7 @@ describe("API routes", () => {
       method: "POST",
       url: "/api/auth/register",
       payload: {
+        name: "",
         email: "invalid-email",
         password: "weak",
       },
@@ -337,6 +343,7 @@ describe("API routes", () => {
       method: "POST",
       url: "/api/auth/register",
       payload: {
+        name: "User Example",
         email: "user@example.com",
         password: "StrongPass123",
       },
@@ -457,6 +464,7 @@ describe("API routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
       email: "user@example.com",
       status: "active",
       createdAt: "2026-04-18T12:00:00.000Z",
@@ -483,6 +491,7 @@ describe("API routes", () => {
   it("updates authenticated profile", async () => {
     findByIdMock.mockResolvedValueOnce({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "Updated Name",
       email: "updated@example.com",
       passwordHash: "hashed-password",
       status: "active",
@@ -506,6 +515,7 @@ describe("API routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().email).toBe("updated@example.com");
+    expect(response.json().name).toBe("Updated Name");
 
     await app.close();
   });

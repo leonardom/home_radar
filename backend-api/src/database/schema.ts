@@ -11,6 +11,7 @@ import {
 
 export const usersTable = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull().default("User"),
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   status: varchar("status", { length: 20 }).notNull().default("active"),

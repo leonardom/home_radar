@@ -9,6 +9,7 @@ describe("UsersService", () => {
       findById: vi.fn(),
       updateProfile: vi.fn().mockResolvedValue({
         id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        name: "Updated Name",
         email: "updated@example.com",
         passwordHash: "hash",
         status: "active",
@@ -35,6 +36,7 @@ describe("UsersService", () => {
       },
     );
     expect(result.email).toBe("updated@example.com");
+    expect(result.name).toBe("Updated Name");
   });
 
   it("throws profile not found when updating unknown profile", async () => {

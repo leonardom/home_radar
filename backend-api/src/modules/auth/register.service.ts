@@ -13,6 +13,7 @@ export class RegisterService {
     const passwordHash = await this.passwordService.hashPassword(input.password);
 
     return this.usersRepository.createUser({
+      name: input.name,
       email: input.email,
       passwordHash,
     });

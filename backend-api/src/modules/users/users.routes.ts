@@ -14,6 +14,7 @@ const usersService = new UsersService(usersRepository, refreshTokensRepository);
 
 const toProfileResponse = (user: {
   id: string;
+  name: string;
   email: string;
   status: "active" | "deleted";
   createdAt: Date;
@@ -22,6 +23,7 @@ const toProfileResponse = (user: {
 }) => {
   return UserProfileResponseSchema.parse({
     id: user.id,
+    name: user.name,
     email: user.email,
     status: user.status,
     createdAt: user.createdAt.toISOString(),

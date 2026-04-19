@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const UserProfileResponseSchema = z.object({
   id: z.uuid(),
+  name: z.string().min(1).max(120),
   email: z.string().email(),
   status: z.enum(["active", "deleted"]),
   createdAt: z.string().datetime(),
@@ -11,6 +12,7 @@ export const UserProfileResponseSchema = z.object({
 
 export const UpdateProfileRequestSchema = z
   .object({
+    name: z.string().trim().min(1).max(120).optional(),
     email: z
       .string()
       .email()
@@ -18,7 +20,7 @@ export const UpdateProfileRequestSchema = z
       .transform((value) => value.trim().toLowerCase())
       .optional(),
   })
-  .refine((data) => data.email !== undefined, {
+  .refine((data) => data.email !== undefined || data.name !== undefined, {
     message: "At least one field must be provided",
   });
 
