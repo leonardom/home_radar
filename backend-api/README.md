@@ -57,11 +57,7 @@ JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_DAYS=7
 ENFORCE_MIN_ONE_FILTER=false
 EMAIL_FROM=no-reply@home-radar.local
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=
-SMTP_PASSWORD=
+SENDGRID_API_KEY=
 ```
 
 Notes:
@@ -72,7 +68,7 @@ Notes:
 - `SCRAPER_SYNC_RETRY_ATTEMPTS`: retry attempts for transient sync failures.
 - `ENFORCE_MIN_ONE_FILTER`: optional free-tier rule for filters delete behavior.
 - `EMAIL_FROM`: sender used for outbound match alert emails.
-- `SMTP_*`: SMTP transport settings. If `SMTP_HOST` is empty, email sending falls back to log mode.
+- `SENDGRID_API_KEY`: SendGrid API key used by the notification worker. If empty, email sending falls back to log mode.
 
 ## Install
 

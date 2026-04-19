@@ -15,11 +15,7 @@ const EnvSchema = z.object({
   JWT_REFRESH_EXPIRES_DAYS: z.coerce.number().int().positive().default(7),
   ENFORCE_MIN_ONE_FILTER: z.coerce.boolean().default(false),
   EMAIL_FROM: z.string().email().default("no-reply@home-radar.local"),
-  SMTP_HOST: z.string().min(1).optional(),
-  SMTP_PORT: z.coerce.number().int().positive().default(587),
-  SMTP_SECURE: z.coerce.boolean().default(false),
-  SMTP_USER: z.string().min(1).optional(),
-  SMTP_PASSWORD: z.string().min(1).optional(),
+  SENDGRID_API_KEY: z.string().min(1).optional(),
 });
 
 const parsedEnv = EnvSchema.safeParse(process.env);
