@@ -18,7 +18,7 @@ export class ApiError extends Error {
 
 const API_BASE =
   process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace(/\/$/, "") ??
-  "http://localhost:3000/api";
+  "http://localhost:4000/api";
 
 const request = async <T>(
   path: string,

@@ -26,6 +26,7 @@
   "type": "commonjs",
   "dependencies": {
     "@clerk/backend": "^3.2.13",
+    "@fastify/cors": "^11.2.0",
     "@sendgrid/mail": "^8.1.6",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.4.2",
