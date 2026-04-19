@@ -3,28 +3,43 @@ import { ZodError } from "zod";
 
 import { requireAuth } from "../auth/auth.middleware";
 import { RefreshTokensRepository } from "../auth/refresh-tokens.repository";
+import { UserIdentitiesRepository } from "../auth/user-identities.repository";
+import type { AuthProvider } from "../auth/user-identities.types";
 import { DuplicateEmailError, ProfileNotFoundError } from "./users.errors";
 import { UsersRepository } from "./users.repository";
-import { UpdateProfileRequestSchema, UserProfileResponseSchema } from "./users.schemas";
+import {
+  UpdateProfileRequestSchema,
+  UserAuthProvidersResponseSchema,
+  UserProfileResponseSchema,
+} from "./users.schemas";
 import { UsersService } from "./users.service";
 
 const usersRepository = new UsersRepository();
 const refreshTokensRepository = new RefreshTokensRepository();
+const userIdentitiesRepository = new UserIdentitiesRepository();
 const usersService = new UsersService(usersRepository, refreshTokensRepository);
 
-const toProfileResponse = (user: {
-  id: string;
-  name: string;
-  email: string;
-  status: "active" | "deleted";
-  createdAt: Date;
-  updatedAt: Date;
-  deletedAt: Date | null;
-}) => {
+const resolveLinkedProviders = (providers: AuthProvider[]): AuthProvider[] => {
+  return Array.from(new Set(["password", ...providers]));
+};
+
+const toProfileResponse = (
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    status: "active" | "deleted";
+    createdAt: Date;
+    updatedAt: Date;
+    deletedAt: Date | null;
+  },
+  linkedProviders: AuthProvider[],
+) => {
   return UserProfileResponseSchema.parse({
     id: user.id,
     name: user.name,
     email: user.email,
+    linkedProviders: resolveLinkedProviders(linkedProviders),
     status: user.status,
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
@@ -42,7 +57,11 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
       }
 
       const user = await usersService.getProfile(userId);
-      const response = toProfileResponse(user);
+      const identities = await userIdentitiesRepository.listByUserId(userId);
+      const response = toProfileResponse(
+        user,
+        identities.map((identity) => identity.provider),
+      );
 
       return reply.code(200).send(response);
     } catch (error: unknown) {
@@ -52,6 +71,22 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
 
       throw error;
     }
+  });
+
+  app.get("/users/me/auth-providers", { preHandler: requireAuth }, async (request, reply) => {
+    const userId = request.authUser?.sub;
+
+    if (!userId) {
+      return reply.code(401).send({ message: "Unauthorized" });
+    }
+
+    const identities = await userIdentitiesRepository.listByUserId(userId);
+    const response = UserAuthProvidersResponseSchema.parse({
+      userId,
+      linkedProviders: resolveLinkedProviders(identities.map((identity) => identity.provider)),
+    });
+
+    return reply.code(200).send(response);
   });
 
   app.patch("/users/me", { preHandler: requireAuth }, async (request, reply) => {
@@ -64,7 +99,11 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
 
       const payload = UpdateProfileRequestSchema.parse(request.body);
       const user = await usersService.updateProfile(userId, payload);
-      const response = toProfileResponse(user);
+      const identities = await userIdentitiesRepository.listByUserId(userId);
+      const response = toProfileResponse(
+        user,
+        identities.map((identity) => identity.provider),
+      );
 
       return reply.code(200).send(response);
     } catch (error: unknown) {

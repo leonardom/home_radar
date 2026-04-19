@@ -1,13 +1,21 @@
 import { z } from "zod";
 
+const AuthProviderSchema = z.enum(["password", "google", "facebook"]);
+
 export const UserProfileResponseSchema = z.object({
   id: z.uuid(),
   name: z.string().min(1).max(120),
   email: z.string().email(),
+  linkedProviders: z.array(AuthProviderSchema),
   status: z.enum(["active", "deleted"]),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   deletedAt: z.string().datetime().nullable(),
+});
+
+export const UserAuthProvidersResponseSchema = z.object({
+  userId: z.uuid(),
+  linkedProviders: z.array(AuthProviderSchema),
 });
 
 export const UpdateProfileRequestSchema = z

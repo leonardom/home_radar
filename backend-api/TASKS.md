@@ -268,8 +268,8 @@ Goal: Offer both auth methods in one coherent API with clear documentation, obse
 
 ### Subtasks
 
-- [ ] Add explicit auth method metadata in user/profile responses (e.g., linked providers list).
-- [ ] Provide endpoint to list linked auth providers for the current user.
+- [x] Add explicit auth method metadata in user/profile responses (e.g., linked providers list).
+- [x] Provide endpoint to list linked auth providers for the current user.
 - [ ] Add endpoint to link/unlink social providers (with safeguards to prevent lockout).
 - [ ] Enforce security checks: verified email requirement, nonce/state handling, and replay protection for OAuth flows.
 - [ ] Add audit/event logs for auth method usage (password login vs Google/Facebook login).

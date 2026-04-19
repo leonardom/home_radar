@@ -716,6 +716,16 @@ describe("API routes", () => {
   });
 
   it("returns authenticated profile with bearer token", async () => {
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
     const app = await buildApp();
 
     const response = await app.inject({
@@ -731,6 +741,7 @@ describe("API routes", () => {
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
       name: "User Example",
       email: "user@example.com",
+      linkedProviders: ["password", "google"],
       status: "active",
       createdAt: "2026-04-18T12:00:00.000Z",
       updatedAt: "2026-04-18T12:00:00.000Z",
@@ -749,6 +760,44 @@ describe("API routes", () => {
     });
 
     expect(response.statusCode).toBe(401);
+
+    await app.close();
+  });
+
+  it("returns linked auth providers for authenticated user", async () => {
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+      {
+        id: "identity-facebook-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "facebook",
+        providerUserId: "facebook-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/users/me/auth-providers",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      linkedProviders: ["password", "google", "facebook"],
+    });
 
     await app.close();
   });
