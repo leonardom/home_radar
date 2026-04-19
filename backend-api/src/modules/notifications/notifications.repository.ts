@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { notificationsTable } from "../../database/schema";
@@ -65,6 +65,17 @@ export class NotificationsRepository {
       .select()
       .from(notificationsTable)
       .where(eq(notificationsTable.userId, userId));
+
+    return rows.map(mapNotification);
+  }
+
+  async listPending(limit: number = 100): Promise<Notification[]> {
+    const rows = await db
+      .select()
+      .from(notificationsTable)
+      .where(eq(notificationsTable.status, "pending"))
+      .orderBy(asc(notificationsTable.createdAt))
+      .limit(limit);
 
     return rows.map(mapNotification);
   }

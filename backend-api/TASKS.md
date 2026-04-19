@@ -194,14 +194,14 @@ Goal: Deliver notifications through email for MVP.
 
 ### Subtasks
 
-- [ ] Choose and configure email provider abstraction (SMTP or provider SDK) via environment variables.
-- [ ] Implement email template builder for match alerts (subject + body with property details and filter context).
-- [ ] Implement delivery service to send pending email notifications.
-- [ ] Add retry-safe send flow so transient failures do not lose notifications.
-- [ ] Update notification status lifecycle (`pending` -> `sent` / `failed`).
-- [ ] Add command/worker entrypoint for processing outbound notifications.
-- [ ] Add unit tests for email payload formatting and delivery error handling.
-- [ ] Add integration test with mocked provider verifying successful send and status update.
+- [x] Choose and configure email provider abstraction (SMTP or provider SDK) via environment variables.
+- [x] Implement email template builder for match alerts (subject + body with property details and filter context).
+- [x] Implement delivery service to send pending email notifications.
+- [x] Add retry-safe send flow so transient failures do not lose notifications.
+- [x] Update notification status lifecycle (`pending` -> `sent` / `failed`).
+- [x] Add command/worker entrypoint for processing outbound notifications.
+- [x] Add unit tests for email payload formatting and delivery error handling.
+- [x] Add integration test with mocked provider verifying successful send and status update.
 
 ## Task 13 - Notification Preferences (FR-15)
 
