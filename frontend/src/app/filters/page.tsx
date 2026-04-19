@@ -48,8 +48,9 @@ export default function FiltersPage() {
     event.preventDefault();
     setError("");
     setMessage("");
+    const form = event.currentTarget;
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const payload = {
       location: String(formData.get("location") ?? "").trim() || undefined,
       propertyType:
@@ -80,7 +81,7 @@ export default function FiltersPage() {
     try {
       await withAuthenticatedSession((token) => createFilter(token, payload));
       setMessage("Filter saved successfully.");
-      event.currentTarget.reset();
+      form.reset();
       await loadFilters();
     } catch (caught) {
       setError(

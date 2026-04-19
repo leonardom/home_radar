@@ -50,14 +50,15 @@ export default function SavedListingsPage() {
     event.preventDefault();
     setError("");
     setMessage("");
+    const form = event.currentTarget;
 
-    const formData = new FormData(event.currentTarget);
+    const formData = new FormData(form);
     const propertyId = String(formData.get("propertyId") ?? "").trim();
 
     try {
       await withAuthenticatedSession((token) => saveListing(token, propertyId));
       setMessage("Listing saved.");
-      event.currentTarget.reset();
+      form.reset();
       await loadSaved();
     } catch (caught) {
       setError(
