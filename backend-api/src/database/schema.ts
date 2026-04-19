@@ -20,6 +20,28 @@ export const usersTable = pgTable("users", {
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
+export const userIdentitiesTable = pgTable(
+  "user_identities",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    provider: varchar("provider", { length: 20 }).notNull(),
+    providerUserId: varchar("provider_user_id", { length: 255 }).notNull(),
+    email: varchar("email", { length: 320 }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    providerIdentityUnique: uniqueIndex("user_identities_provider_user_id_unique").on(
+      table.provider,
+      table.providerUserId,
+    ),
+    userIdIdx: index("user_identities_user_id_idx").on(table.userId),
+    emailIdx: index("user_identities_email_idx").on(table.email),
+  }),
+);
+
 export const refreshTokensTable = pgTable("refresh_tokens", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: uuid("user_id")

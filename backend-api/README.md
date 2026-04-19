@@ -55,6 +55,11 @@ SCRAPER_SYNC_RETRY_ATTEMPTS=3
 JWT_ACCESS_SECRET=dev_access_secret_change_me_1234567890
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_DAYS=7
+CLERK_SECRET_KEY=
+CLERK_PUBLISHABLE_KEY=
+CLERK_JWT_KEY=
+CLERK_API_URL=
+CLERK_SKIP_JWKS_CACHE=false
 ENFORCE_MIN_ONE_FILTER=false
 EMAIL_FROM=no-reply@home-radar.local
 SENDGRID_API_KEY=
@@ -67,6 +72,10 @@ Notes:
 - `SCRAPER_DATABASE_URL`: DB used to read scraper `listings`.
 - `SCRAPER_SYNC_BATCH_SIZE`: max rows per incremental pull.
 - `SCRAPER_SYNC_RETRY_ATTEMPTS`: retry attempts for transient sync failures.
+- `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`: Clerk backend/frontend keys for OAuth foundation.
+- `CLERK_JWT_KEY`: optional Clerk JWT verification key for networkless token verification.
+- `CLERK_API_URL`: optional Clerk backend API URL override.
+- `CLERK_SKIP_JWKS_CACHE`: optional flag to skip JWKS cache during verification.
 - `ENFORCE_MIN_ONE_FILTER`: optional free-tier rule for filters delete behavior.
 - `EMAIL_FROM`: sender used for outbound match alert emails.
 - `SENDGRID_API_KEY`: SendGrid API key used by the notification worker. If empty, email sending falls back to log mode.
@@ -98,7 +107,7 @@ Generate SQL from schema (if needed):
 npm run db:generate
 ```
 
-Current migrations include users, refresh tokens, search filters, properties, sync state, matches, sync dead letters, notifications, and notification preferences.
+Current migrations include users, refresh tokens, search filters, properties, sync state, matches, sync dead letters, notifications, notification preferences, notification tracking fields, and user identities.
 
 ## Notification Delivery Worker
 

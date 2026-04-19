@@ -232,6 +232,51 @@ Goal: Track notification sent status, delivery attempts, and failures with opera
 - [x] Add unit tests for status transitions and retry state machine.
 - [x] Add integration tests covering success, retry, and terminal failure scenarios.
 
+## Task 15 - Multi-Auth Foundation (Email/Password + Clerk) (FR-17)
+
+Goal: Keep email/password authentication working while introducing Clerk as an additional identity provider foundation.
+
+### Subtasks
+
+- [x] Define auth strategy contract supporting multiple providers (`password`, `google`, `facebook`) under one user account.
+- [x] Add user identity linkage model (e.g., `user_identities` table: userId, provider, providerUserId, email, createdAt).
+- [x] Add database migration with unique constraints (`provider + providerUserId`) and indexes for lookup.
+- [x] Extend user service/repository logic to resolve a local user by provider identity or by verified email.
+- [x] Add environment configuration for Clerk (`CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, optional JWKS/cache settings).
+- [x] Add adapter service to validate Clerk session/JWT and extract normalized identity claims.
+- [x] Ensure backward compatibility: existing email/password register/login flows remain unchanged.
+- [x] Add unit tests for identity resolution and provider-linking rules.
+
+## Task 16 - OAuth Login with Google and Facebook via Clerk (FR-18)
+
+Goal: Enable OAuth login using Google and Facebook through Clerk while mapping authenticated identities to backend users.
+
+### Subtasks
+
+- [ ] Configure Clerk social connections for Google and Facebook (dashboard/env checklist documented in README).
+- [ ] Add backend endpoint for OAuth callback/session exchange (or token verification) using Clerk SDK.
+- [ ] Implement provider mapping logic for `google` and `facebook` identities.
+- [ ] Implement user provisioning flow for first-time social login (create local user if no linked identity exists).
+- [ ] Implement account-link flow when social email matches existing local account (safe link policy + conflict handling).
+- [ ] Issue backend access/refresh tokens for successful Clerk-authenticated users.
+- [ ] Standardize error responses for invalid/expired Clerk tokens and unsupported provider scenarios.
+- [ ] Add integration tests for Google/Facebook success, first-login provisioning, and conflict cases.
+
+## Task 17 - Unified Auth UX/API and Security Hardening (FR-19)
+
+Goal: Offer both auth methods in one coherent API with clear documentation, observability, and secure defaults.
+
+### Subtasks
+
+- [ ] Add explicit auth method metadata in user/profile responses (e.g., linked providers list).
+- [ ] Provide endpoint to list linked auth providers for the current user.
+- [ ] Add endpoint to link/unlink social providers (with safeguards to prevent lockout).
+- [ ] Enforce security checks: verified email requirement, nonce/state handling, and replay protection for OAuth flows.
+- [ ] Add audit/event logs for auth method usage (password login vs Google/Facebook login).
+- [ ] Add rate-limiting and abuse controls specific to OAuth/session exchange endpoints.
+- [ ] Update README with complete setup/runbook for Clerk + Google + Facebook and local testing steps.
+- [ ] Add end-to-end tests covering mixed auth usage (password account later linked to social, and vice versa).
+
 ## Notes
 
 - Update each checkbox as work progresses.
