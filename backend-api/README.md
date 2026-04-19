@@ -80,6 +80,12 @@ Run migrations (Drizzle):
 npm run db:migrate
 ```
 
+Run SQL migrations directly with `psql` (recommended fallback for local Docker Postgres):
+
+```bash
+npm run db:migrate:sql
+```
+
 Generate SQL from schema (if needed):
 
 ```bash
