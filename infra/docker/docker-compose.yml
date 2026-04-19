@@ -15,6 +15,28 @@ services:
       - postgres
     restart: unless-stopped
 
+  scheduler:
+    build:
+      context: ../../backend-api
+      dockerfile: Dockerfile
+      target: runner
+    container_name: scheduler
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/home_radar
+      - SCRAPER_DATABASE_URL=postgresql://postgres:postgres@postgres:5432/home_radar
+      - SCRAPER_SYNC_RETRY_ATTEMPTS=3
+      - SENDGRID_API_KEY=
+      - EMAIL_FROM=no-reply@home-radar.local
+      - NOTIFICATIONS_MAX_ATTEMPTS=3
+    volumes:
+      - ./scheduler.crontab:/etc/crontabs/root:ro
+    command: ["crond", "-f", "-l", "8"]
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: redis

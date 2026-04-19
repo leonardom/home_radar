@@ -1,0 +1,11 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# Incremental sync every 5 minutes
+*/5 * * * * node /app/dist/modules/properties/sync.cli.js incremental >> /proc/1/fd/1 2>> /proc/1/fd/2
+
+# Notification sender every minute
+* * * * * node /app/dist/modules/notifications/delivery.cli.js >> /proc/1/fd/1 2>> /proc/1/fd/2
+
+# Optional nightly backfill at 02:30
+30 2 * * * node /app/dist/modules/properties/sync.cli.js backfill >> /proc/1/fd/1 2>> /proc/1/fd/2
