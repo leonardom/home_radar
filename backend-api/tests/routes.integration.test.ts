@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { ClerkTokenValidationError } from "../src/modules/auth/clerk-token.adapter";
 import { DuplicateEmailError } from "../src/modules/users/users.errors";
 
 const {
@@ -32,6 +33,10 @@ const {
   updateNotificationPreferenceMock,
   listFailedNotificationsMock,
   getNotificationMetricsMock,
+  findByProviderIdentityMock,
+  listIdentitiesByUserIdMock,
+  linkIdentityMock,
+  verifyClerkSessionTokenMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -64,6 +69,10 @@ const {
     updateNotificationPreferenceMock: vi.fn<() => Promise<unknown>>(),
     listFailedNotificationsMock: vi.fn<() => Promise<unknown[]>>(),
     getNotificationMetricsMock: vi.fn<() => Promise<unknown>>(),
+    findByProviderIdentityMock: vi.fn<() => Promise<unknown>>(),
+    listIdentitiesByUserIdMock: vi.fn<() => Promise<unknown[]>>(),
+    linkIdentityMock: vi.fn<() => Promise<unknown>>(),
+    verifyClerkSessionTokenMock: vi.fn<() => Promise<unknown>>(),
   };
 });
 
@@ -162,6 +171,31 @@ vi.mock("../src/modules/notification-preferences/notification-preferences.reposi
   return { NotificationPreferencesRepository };
 });
 
+vi.mock("../src/modules/auth/user-identities.repository", () => {
+  class UserIdentitiesRepository {
+    findByProviderIdentity = findByProviderIdentityMock;
+    listByUserId = listIdentitiesByUserIdMock;
+    linkIdentity = linkIdentityMock;
+  }
+
+  return { UserIdentitiesRepository };
+});
+
+vi.mock("../src/modules/auth/clerk-token.adapter", () => {
+  class ClerkTokenAdapter {
+    verifySessionToken = verifyClerkSessionTokenMock;
+  }
+
+  class ClerkTokenValidationError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "ClerkTokenValidationError";
+    }
+  }
+
+  return { ClerkTokenAdapter, ClerkTokenValidationError };
+});
+
 vi.mock("../src/modules/notifications/notifications.repository", () => {
   class NotificationsRepository {
     listFailed = listFailedNotificationsMock;
@@ -205,6 +239,10 @@ describe("API routes", () => {
     updateNotificationPreferenceMock.mockReset();
     listFailedNotificationsMock.mockReset();
     getNotificationMetricsMock.mockReset();
+    findByProviderIdentityMock.mockReset();
+    listIdentitiesByUserIdMock.mockReset();
+    linkIdentityMock.mockReset();
+    verifyClerkSessionTokenMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -307,6 +345,24 @@ describe("API routes", () => {
         updatedAt: new Date("2026-04-18T14:00:00.000Z"),
       },
     ]);
+    findByProviderIdentityMock.mockResolvedValue(null);
+    listIdentitiesByUserIdMock.mockResolvedValue([]);
+    linkIdentityMock.mockResolvedValue({
+      id: "identity-1",
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      provider: "google",
+      providerUserId: "google-user-1",
+      email: "user@example.com",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+    verifyClerkSessionTokenMock.mockResolvedValue({
+      providerUserId: "google-user-1",
+      email: "user@example.com",
+      emailVerified: true,
+      firstName: "User",
+      lastName: "Example",
+      fullName: "User Example",
+    });
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -435,6 +491,154 @@ describe("API routes", () => {
       tokenType: "Bearer",
       expiresIn: 900,
     });
+
+    await app.close();
+  });
+
+  it("authenticates with oauth session token", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      tokenType: "Bearer",
+      expiresIn: 900,
+    });
+
+    await app.close();
+  });
+
+  it("authenticates with facebook oauth session token", async () => {
+    verifyClerkSessionTokenMock.mockResolvedValueOnce({
+      providerUserId: "facebook-user-1",
+      email: "user@example.com",
+      emailVerified: true,
+      firstName: "User",
+      lastName: "Example",
+      fullName: "User Example",
+    });
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "facebook",
+        sessionToken: "oauth-session-token-facebook",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      tokenType: "Bearer",
+      expiresIn: 900,
+    });
+
+    await app.close();
+  });
+
+  it("returns 401 for invalid oauth session token", async () => {
+    verifyClerkSessionTokenMock.mockRejectedValueOnce(
+      new ClerkTokenValidationError("invalid oauth token"),
+    );
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "invalid-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid oauth provider payload", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "apple",
+        sessionToken: "oauth-session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("provisions a new user on first oauth login when no account exists", async () => {
+    findByEmailMock.mockResolvedValueOnce(null);
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(createUserMock).toHaveBeenCalledTimes(1);
+
+    await app.close();
+  });
+
+  it("returns 409 when oauth identity is linked to another user", async () => {
+    findByEmailMock.mockResolvedValueOnce({
+      id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
+      email: "user@example.com",
+      passwordHash: "hashed-password",
+      status: "active",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+    linkIdentityMock.mockResolvedValueOnce({
+      id: "identity-conflict",
+      userId: "other-user-id",
+      provider: "google",
+      providerUserId: "google-user-1",
+      email: "user@example.com",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({ message: "OAuth identity already linked to another user" });
 
     await app.close();
   });

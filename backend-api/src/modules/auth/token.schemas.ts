@@ -9,6 +9,11 @@ export const LoginRequestSchema = z.object({
   password: z.string().min(1),
 });
 
+export const OAuthLoginRequestSchema = z.object({
+  provider: z.enum(["google", "facebook"]),
+  sessionToken: z.string().min(1),
+});
+
 export const RefreshRequestSchema = z.object({
   refreshToken: z.string().min(1),
 });
@@ -21,5 +26,6 @@ export const AuthTokensResponseSchema = z.object({
 });
 
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
+export type OAuthLoginRequest = z.infer<typeof OAuthLoginRequestSchema>;
 export type RefreshRequest = z.infer<typeof RefreshRequestSchema>;
 export type AuthTokensResponse = z.infer<typeof AuthTokensResponseSchema>;

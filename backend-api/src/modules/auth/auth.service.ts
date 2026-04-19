@@ -1,9 +1,19 @@
-import { InvalidCredentialsError, InvalidRefreshTokenError } from "./auth.errors";
+import { randomUUID } from "node:crypto";
+
+import {
+  InvalidCredentialsError,
+  InvalidRefreshTokenError,
+  OAuthIdentityEmailRequiredError,
+} from "./auth.errors";
 import { RefreshTokensRepository } from "./refresh-tokens.repository";
 import { TokenService } from "./token.service";
-import type { AuthTokensResponse, LoginRequest } from "./token.schemas";
+import type { AuthTokensResponse, LoginRequest, OAuthLoginRequest } from "./token.schemas";
 import { UsersRepository } from "../users/users.repository";
 import { PasswordService } from "./password.service";
+import { AuthIdentityService, ProviderIdentityConflictError } from "./auth-identity.service";
+import { ClerkTokenAdapter } from "./clerk-token.adapter";
+import { UserIdentitiesRepository } from "./user-identities.repository";
+import type { User } from "../users/user.types";
 
 export class AuthService {
   constructor(
@@ -11,6 +21,9 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
     private readonly refreshTokensRepository: RefreshTokensRepository,
+    private readonly userIdentitiesRepository: UserIdentitiesRepository,
+    private readonly clerkTokenAdapter: ClerkTokenAdapter,
+    private readonly authIdentityService: AuthIdentityService,
   ) {}
 
   async login(payload: LoginRequest): Promise<AuthTokensResponse> {
@@ -57,6 +70,52 @@ export class AuthService {
     await this.refreshTokensRepository.revokeByTokenHash(tokenHash);
   }
 
+  async oauthLogin(payload: OAuthLoginRequest): Promise<AuthTokensResponse> {
+    const verifiedIdentity = await this.clerkTokenAdapter.verifySessionToken(
+      payload.sessionToken,
+      payload.provider,
+    );
+
+    const resolved = await this.authIdentityService.resolveUserByProviderOrVerifiedEmail({
+      provider: payload.provider,
+      providerUserId: verifiedIdentity.providerUserId,
+      email: verifiedIdentity.email ?? undefined,
+      emailVerified: verifiedIdentity.emailVerified,
+    });
+
+    if (resolved) {
+      return this.issueTokens(resolved.user.id, resolved.user.email);
+    }
+
+    if (!verifiedIdentity.email || !verifiedIdentity.emailVerified) {
+      throw new OAuthIdentityEmailRequiredError();
+    }
+
+    const user = await this.provisionOAuthUser({
+      email: verifiedIdentity.email,
+      fullName: verifiedIdentity.fullName,
+      firstName: verifiedIdentity.firstName,
+      lastName: verifiedIdentity.lastName,
+    });
+
+    try {
+      await this.userIdentitiesRepository.linkIdentity({
+        userId: user.id,
+        provider: payload.provider,
+        providerUserId: verifiedIdentity.providerUserId,
+        email: user.email,
+      });
+    } catch (error: unknown) {
+      if (error instanceof ProviderIdentityConflictError) {
+        throw error;
+      }
+
+      throw error;
+    }
+
+    return this.issueTokens(user.id, user.email);
+  }
+
   private async issueTokens(userId: string, email: string): Promise<AuthTokensResponse> {
     const access = this.tokenService.createAccessToken({
       sub: userId,
@@ -79,5 +138,29 @@ export class AuthService {
       tokenType: "Bearer",
       expiresIn: access.expiresIn,
     };
+  }
+
+  private async provisionOAuthUser(input: {
+    email: string | null;
+    fullName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+  }): Promise<User> {
+    if (!input.email) {
+      throw new OAuthIdentityEmailRequiredError();
+    }
+
+    const passwordHash = await this.passwordService.hashPassword(`oauth:${randomUUID()}`);
+
+    const fallbackName = input.email.split("@")[0] || "User";
+    const composedName = [input.firstName, input.lastName].filter(Boolean).join(" ").trim();
+    const name = (input.fullName ?? composedName) || fallbackName;
+
+    return this.usersRepository.createUser({
+      name,
+      email: input.email,
+      passwordHash,
+      status: "active",
+    });
   }
 }

@@ -172,6 +172,7 @@ Public:
 - `GET /api/health`
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/oauth`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 
@@ -231,6 +232,55 @@ Backfill mode also marks missing properties as `inactive` (soft status update).
 - Retry policy for transient operations (`SCRAPER_SYNC_RETRY_ATTEMPTS`).
 - Dead-letter capture in `sync_dead_letters` for malformed/failed listings.
 - Diagnostics endpoint `GET /api/sync/status` for checkpoint lag visibility.
+
+## OAuth Login (Clerk + Google/Facebook)
+
+The backend supports social login through Clerk via:
+
+- `POST /api/auth/oauth`
+
+Request body:
+
+```json
+{
+  "provider": "google",
+  "sessionToken": "<clerk-session-or-jwt-token>"
+}
+```
+
+Supported providers:
+
+- `google`
+- `facebook`
+
+Behavior:
+
+- Verifies Clerk session token and normalizes identity claims.
+- Resolves local user by linked provider identity.
+- If no link exists, links to an existing local account when Clerk email is verified and matches.
+- If no local account exists, provisions a new local user and links the provider identity.
+- Returns backend access/refresh tokens with the same contract as password login.
+
+Error contracts:
+
+- `401` invalid/expired Clerk token
+- `400` validation errors (including unsupported provider)
+- `400` missing or unverified email in Clerk claims
+- `409` provider identity conflict (already linked to another user)
+
+### Clerk Social Setup Checklist
+
+1. Create a Clerk application and copy `CLERK_SECRET_KEY` and `CLERK_PUBLISHABLE_KEY`.
+2. In Clerk Dashboard, enable Google and Facebook social connections.
+3. Configure provider credentials in Clerk for Google/Facebook.
+4. Configure OAuth redirect URLs for your frontend application in Clerk.
+5. Set backend environment variables:
+   - `CLERK_SECRET_KEY`
+   - `CLERK_PUBLISHABLE_KEY`
+   - `CLERK_JWT_KEY` (optional, for local JWT verification)
+   - `CLERK_API_URL` (optional override)
+   - `CLERK_SKIP_JWKS_CACHE` (optional)
+6. Restart the backend after env changes.
 
 ## Matching and Persistence Notes
 

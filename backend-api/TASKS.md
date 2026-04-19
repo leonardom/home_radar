@@ -253,14 +253,14 @@ Goal: Enable OAuth login using Google and Facebook through Clerk while mapping a
 
 ### Subtasks
 
-- [ ] Configure Clerk social connections for Google and Facebook (dashboard/env checklist documented in README).
-- [ ] Add backend endpoint for OAuth callback/session exchange (or token verification) using Clerk SDK.
-- [ ] Implement provider mapping logic for `google` and `facebook` identities.
-- [ ] Implement user provisioning flow for first-time social login (create local user if no linked identity exists).
-- [ ] Implement account-link flow when social email matches existing local account (safe link policy + conflict handling).
-- [ ] Issue backend access/refresh tokens for successful Clerk-authenticated users.
-- [ ] Standardize error responses for invalid/expired Clerk tokens and unsupported provider scenarios.
-- [ ] Add integration tests for Google/Facebook success, first-login provisioning, and conflict cases.
+- [x] Configure Clerk social connections for Google and Facebook (dashboard/env checklist documented in README).
+- [x] Add backend endpoint for OAuth callback/session exchange (or token verification) using Clerk SDK.
+- [x] Implement provider mapping logic for `google` and `facebook` identities.
+- [x] Implement user provisioning flow for first-time social login (create local user if no linked identity exists).
+- [x] Implement account-link flow when social email matches existing local account (safe link policy + conflict handling).
+- [x] Issue backend access/refresh tokens for successful Clerk-authenticated users.
+- [x] Standardize error responses for invalid/expired Clerk tokens and unsupported provider scenarios.
+- [x] Add integration tests for Google/Facebook success, first-login provisioning, and conflict cases.
 
 ## Task 17 - Unified Auth UX/API and Security Hardening (FR-19)
 

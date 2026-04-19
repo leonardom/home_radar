@@ -11,3 +11,10 @@ export class InvalidRefreshTokenError extends Error {
     this.name = "InvalidRefreshTokenError";
   }
 }
+
+export class OAuthIdentityEmailRequiredError extends Error {
+  constructor() {
+    super("OAuth identity requires a verified email");
+    this.name = "OAuthIdentityEmailRequiredError";
+  }
+}
