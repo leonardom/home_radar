@@ -25,8 +25,8 @@ export default function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [filters, matches, saved, notifications, sync] = await withAuthenticatedSession(
-          async (token) => {
+        const [filters, matches, saved, notifications, sync] =
+          await withAuthenticatedSession(async (token) => {
             return Promise.all([
               getFilters(token),
               getMatches(token),
@@ -34,14 +34,16 @@ export default function DashboardPage() {
               getNotificationsStatus(token),
               getSyncStatus(token),
             ]);
-          },
-        );
+          });
 
         setMetrics([
           { label: "Active filters", value: filters.items.length },
           { label: "New matches", value: matches.items.length },
           { label: "Saved listings", value: saved.items.length },
-          { label: "Notifications sent", value: notifications.metrics.sentCount },
+          {
+            label: "Notifications sent",
+            value: notifications.metrics.sentCount,
+          },
         ]);
 
         const firstLag = sync.states.at(0)?.lagSeconds;
@@ -53,7 +55,9 @@ export default function DashboardPage() {
             : "No sync state available yet.",
         ]);
       } catch (caught) {
-        setError(caught instanceof Error ? caught.message : "Failed to load dashboard");
+        setError(
+          caught instanceof Error ? caught.message : "Failed to load dashboard",
+        );
       } finally {
         setIsLoading(false);
       }

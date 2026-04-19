@@ -17,9 +17,13 @@ export class ApiError extends Error {
 }
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace(/\/$/, "") ?? "http://localhost:3000/api";
+  process.env.NEXT_PUBLIC_BACKEND_API_URL?.replace(/\/$/, "") ??
+  "http://localhost:3000/api";
 
-const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
+const request = async <T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> => {
   const response = await fetch(`${API_BASE}${path}`, {
     method: options.method ?? "GET",
     headers: {
@@ -32,7 +36,9 @@ const request = async <T>(path: string, options: RequestOptions = {}): Promise<T
 
   const contentType = response.headers.get("content-type") ?? "";
   const isJson = contentType.includes("application/json");
-  const payload = isJson ? ((await response.json()) as Record<string, unknown>) : null;
+  const payload = isJson
+    ? ((await response.json()) as Record<string, unknown>)
+    : null;
 
   if (!response.ok) {
     const message =
@@ -65,7 +71,14 @@ export type FilterItem = {
   bathroomsMin: number | null;
   bathroomsMax: number | null;
   location: string | null;
-  propertyType: "apartment" | "house" | "bungalow" | "land" | "commercial" | "other" | null;
+  propertyType:
+    | "apartment"
+    | "house"
+    | "bungalow"
+    | "land"
+    | "commercial"
+    | "other"
+    | null;
   keywords: string[];
   createdAt: string;
   updatedAt: string;
@@ -85,7 +98,13 @@ export type SavedListingItem = {
     bedrooms: number | null;
     bathrooms: number | null;
     location: string | null;
-    propertyType: "house" | "apartment" | "land" | "commercial" | "other" | null;
+    propertyType:
+      | "house"
+      | "apartment"
+      | "land"
+      | "commercial"
+      | "other"
+      | null;
     url: string | null;
     status: "active" | "inactive";
     lastSeenAt: string;

@@ -34,7 +34,11 @@ export default function MainNav() {
       <Link href="/dashboard">Dashboard</Link>
       <Link href="/filters">Filter settings</Link>
       <Link href="/saved-listings">Saved listings</Link>
-      <button type="button" onClick={() => void onLogout()} disabled={isSubmitting}>
+      <button
+        type="button"
+        onClick={() => void onLogout()}
+        disabled={isSubmitting}
+      >
         {isSubmitting ? "Logging out..." : "Logout"}
       </button>
     </nav>

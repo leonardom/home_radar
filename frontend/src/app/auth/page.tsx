@@ -24,7 +24,10 @@ export default function AuthPage() {
 
     try {
       const tokens = await login(email, password);
-      setSession({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+      setSession({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
       setMessage("Login successful. Redirecting to dashboard...");
       router.push("/dashboard");
     } catch (caught) {
@@ -48,11 +51,16 @@ export default function AuthPage() {
     try {
       await register(name, email, password);
       const tokens = await login(email, password);
-      setSession({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken });
+      setSession({
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+      });
       setMessage("Registration successful. Redirecting to dashboard...");
       router.push("/dashboard");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Registration failed");
+      setError(
+        caught instanceof Error ? caught.message : "Registration failed",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -61,55 +69,79 @@ export default function AuthPage() {
   return (
     <div className="stack-lg">
       {(message || error) && (
-        <p className={error ? "notice error" : "notice success"}>{error || message}</p>
+        <p className={error ? "notice error" : "notice success"}>
+          {error || message}
+        </p>
       )}
 
       <div className="grid two-col stack-lg">
-      <section className="panel stack-md">
-        <h1>Login</h1>
-        <p className="muted">Use your Home Radar account credentials.</p>
-        <form className="stack-sm" onSubmit={onLogin}>
-          <label className="field">
-            Email
-            <input name="loginEmail" type="email" placeholder="you@email.com" required />
-          </label>
-          <label className="field">
-            Password
-            <input name="loginPassword" type="password" placeholder="Your password" required />
-          </label>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Login"}
-          </button>
-        </form>
-      </section>
+        <section className="panel stack-md">
+          <h1>Login</h1>
+          <p className="muted">Use your Home Radar account credentials.</p>
+          <form className="stack-sm" onSubmit={onLogin}>
+            <label className="field">
+              Email
+              <input
+                name="loginEmail"
+                type="email"
+                placeholder="you@email.com"
+                required
+              />
+            </label>
+            <label className="field">
+              Password
+              <input
+                name="loginPassword"
+                type="password"
+                placeholder="Your password"
+                required
+              />
+            </label>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Login"}
+            </button>
+          </form>
+        </section>
 
-      <section className="panel stack-md">
-        <h1>Register</h1>
-        <p className="muted">Create your account and start configuring filters.</p>
-        <form className="stack-sm" onSubmit={onRegister}>
-          <label className="field">
-            Name
-            <input name="registerName" type="text" placeholder="Your name" required />
-          </label>
-          <label className="field">
-            Email
-            <input name="registerEmail" type="email" placeholder="you@email.com" required />
-          </label>
-          <label className="field">
-            Password
-            <input
-              name="registerPassword"
-              type="password"
-              placeholder="Choose a password"
-              minLength={8}
-              required
-            />
-          </label>
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Submitting..." : "Create account"}
-          </button>
-        </form>
-      </section>
+        <section className="panel stack-md">
+          <h1>Register</h1>
+          <p className="muted">
+            Create your account and start configuring filters.
+          </p>
+          <form className="stack-sm" onSubmit={onRegister}>
+            <label className="field">
+              Name
+              <input
+                name="registerName"
+                type="text"
+                placeholder="Your name"
+                required
+              />
+            </label>
+            <label className="field">
+              Email
+              <input
+                name="registerEmail"
+                type="email"
+                placeholder="you@email.com"
+                required
+              />
+            </label>
+            <label className="field">
+              Password
+              <input
+                name="registerPassword"
+                type="password"
+                placeholder="Choose a password"
+                minLength={8}
+                required
+              />
+            </label>
+            <button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Create account"}
+            </button>
+          </form>
+        </section>
       </div>
     </div>
   );

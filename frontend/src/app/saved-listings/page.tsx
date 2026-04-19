@@ -20,11 +20,17 @@ export default function SavedListingsPage() {
     await Promise.resolve();
 
     try {
-      const response = await withAuthenticatedSession((token) => getSavedListings(token));
+      const response = await withAuthenticatedSession((token) =>
+        getSavedListings(token),
+      );
       setItems(response.items);
       setError("");
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to load saved listings");
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Failed to load saved listings",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -54,17 +60,23 @@ export default function SavedListingsPage() {
       event.currentTarget.reset();
       await loadSaved();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to save listing");
+      setError(
+        caught instanceof Error ? caught.message : "Failed to save listing",
+      );
     }
   };
 
   const onRemove = async (propertyId: string) => {
     try {
-      await withAuthenticatedSession((token) => removeSavedListing(token, propertyId));
+      await withAuthenticatedSession((token) =>
+        removeSavedListing(token, propertyId),
+      );
       setMessage("Listing removed.");
       await loadSaved();
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Failed to remove listing");
+      setError(
+        caught instanceof Error ? caught.message : "Failed to remove listing",
+      );
     }
   };
 
@@ -73,13 +85,18 @@ export default function SavedListingsPage() {
       <section className="hero compact">
         <p className="eyebrow">Saved listings</p>
         <h1>Bookmarks</h1>
-        <p>Review saved properties and remove listings you no longer want to track.</p>
+        <p>
+          Review saved properties and remove listings you no longer want to
+          track.
+        </p>
       </section>
 
       <section className="panel stack-sm">
         <form className="stack-sm" onSubmit={onSave}>
           {(message || error) && (
-            <p className={error ? "notice error" : "notice success"}>{error || message}</p>
+            <p className={error ? "notice error" : "notice success"}>
+              {error || message}
+            </p>
           )}
           <label className="field">
             Save by property ID
@@ -95,17 +112,23 @@ export default function SavedListingsPage() {
 
         <ul className="list">
           {isLoading && <li className="notice">Loading saved listings...</li>}
-          {!isLoading && items.length === 0 && <li className="muted">No saved listings yet.</li>}
+          {!isLoading && items.length === 0 && (
+            <li className="muted">No saved listings yet.</li>
+          )}
           {items.map((item) => (
             <li key={item.id} className="saved-row">
               <div>
                 <p className="saved-title">{item.property.title}</p>
                 <p className="muted">
-                  {item.property.price ?? "n/a"} · status: {item.property.status} · {" "}
+                  {item.property.price ?? "n/a"} · status:{" "}
+                  {item.property.status} ·{" "}
                   {item.property.location ?? "Unknown location"}
                 </p>
               </div>
-              <button type="button" onClick={() => void onRemove(item.propertyId)}>
+              <button
+                type="button"
+                onClick={() => void onRemove(item.propertyId)}
+              >
                 Remove
               </button>
             </li>

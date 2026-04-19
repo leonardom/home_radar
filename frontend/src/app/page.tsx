@@ -7,8 +7,8 @@ export default function Home() {
         <p className="eyebrow">Simple MVP</p>
         <h1>Track your next home without losing signal.</h1>
         <p>
-          This frontend includes the core MVP flows: login/register, dashboard insights,
-          filter settings, and saved listings.
+          This frontend includes the core MVP flows: login/register, dashboard
+          insights, filter settings, and saved listings.
         </p>
       </section>
 
