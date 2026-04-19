@@ -1,5 +1,7 @@
 export type AuthProvider = "password" | "google" | "facebook";
 
+export type SocialAuthProvider = Extract<AuthProvider, "google" | "facebook">;
+
 export type UserIdentity = {
   id: string;
   userId: string;

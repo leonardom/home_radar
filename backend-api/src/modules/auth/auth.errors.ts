@@ -18,3 +18,24 @@ export class OAuthIdentityEmailRequiredError extends Error {
     this.name = "OAuthIdentityEmailRequiredError";
   }
 }
+
+export class OAuthInvalidStateNonceError extends Error {
+  constructor() {
+    super("Invalid OAuth state or nonce");
+    this.name = "OAuthInvalidStateNonceError";
+  }
+}
+
+export class OAuthReplayDetectedError extends Error {
+  constructor() {
+    super("OAuth replay detected");
+    this.name = "OAuthReplayDetectedError";
+  }
+}
+
+export class OAuthRateLimitExceededError extends Error {
+  constructor() {
+    super("OAuth rate limit exceeded");
+    this.name = "OAuthRateLimitExceededError";
+  }
+}

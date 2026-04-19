@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClerkTokenValidationError } from "../src/modules/auth/clerk-token.adapter";
+import { oauthRateLimitService } from "../src/modules/auth/oauth-rate-limit.service";
+import { oauthReplayProtectionService } from "../src/modules/auth/oauth-security.service";
 import { DuplicateEmailError } from "../src/modules/users/users.errors";
 
 const {
@@ -36,6 +38,7 @@ const {
   findByProviderIdentityMock,
   listIdentitiesByUserIdMock,
   linkIdentityMock,
+  unlinkIdentityMock,
   verifyClerkSessionTokenMock,
 } = vi.hoisted(() => {
   return {
@@ -72,6 +75,7 @@ const {
     findByProviderIdentityMock: vi.fn<() => Promise<unknown>>(),
     listIdentitiesByUserIdMock: vi.fn<() => Promise<unknown[]>>(),
     linkIdentityMock: vi.fn<() => Promise<unknown>>(),
+    unlinkIdentityMock: vi.fn<() => Promise<boolean>>(),
     verifyClerkSessionTokenMock: vi.fn<() => Promise<unknown>>(),
   };
 });
@@ -176,6 +180,7 @@ vi.mock("../src/modules/auth/user-identities.repository", () => {
     findByProviderIdentity = findByProviderIdentityMock;
     listByUserId = listIdentitiesByUserIdMock;
     linkIdentity = linkIdentityMock;
+    unlinkIdentity = unlinkIdentityMock;
   }
 
   return { UserIdentitiesRepository };
@@ -209,6 +214,8 @@ import { buildApp } from "../src/app";
 
 describe("API routes", () => {
   beforeEach(() => {
+    oauthRateLimitService.configureForTests(3, 60_000);
+    oauthReplayProtectionService.resetForTests();
     checkDatabaseMock.mockReset();
     createUserMock.mockReset();
     findByEmailMock.mockReset();
@@ -242,6 +249,7 @@ describe("API routes", () => {
     findByProviderIdentityMock.mockReset();
     listIdentitiesByUserIdMock.mockReset();
     linkIdentityMock.mockReset();
+    unlinkIdentityMock.mockReset();
     verifyClerkSessionTokenMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
@@ -363,6 +371,7 @@ describe("API routes", () => {
       lastName: "Example",
       fullName: "User Example",
     });
+    unlinkIdentityMock.mockResolvedValue(true);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -504,6 +513,8 @@ describe("API routes", () => {
       payload: {
         provider: "google",
         sessionToken: "oauth-session-token",
+        state: "oauth_state_login_google_12345",
+        nonce: "oauth_nonce_login_google_12345",
       },
     });
 
@@ -536,6 +547,8 @@ describe("API routes", () => {
       payload: {
         provider: "facebook",
         sessionToken: "oauth-session-token-facebook",
+        state: "oauth_state_login_facebook_12345",
+        nonce: "oauth_nonce_login_facebook_12345",
       },
     });
 
@@ -562,6 +575,8 @@ describe("API routes", () => {
       payload: {
         provider: "google",
         sessionToken: "invalid-token",
+        state: "oauth_state_invalid_token_12345",
+        nonce: "oauth_nonce_invalid_token_12345",
       },
     });
 
@@ -579,6 +594,8 @@ describe("API routes", () => {
       payload: {
         provider: "apple",
         sessionToken: "oauth-session-token",
+        state: "oauth_state_invalid_provider_12345",
+        nonce: "oauth_nonce_invalid_provider_12345",
       },
     });
 
@@ -598,6 +615,8 @@ describe("API routes", () => {
       payload: {
         provider: "google",
         sessionToken: "oauth-session-token",
+        state: "oauth_state_first_login_12345",
+        nonce: "oauth_nonce_first_login_12345",
       },
     });
 
@@ -634,6 +653,8 @@ describe("API routes", () => {
       payload: {
         provider: "google",
         sessionToken: "oauth-session-token",
+        state: "oauth_state_conflict_login_12345",
+        nonce: "oauth_nonce_conflict_login_12345",
       },
     });
 
@@ -797,6 +818,384 @@ describe("API routes", () => {
     expect(response.json()).toEqual({
       userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
       linkedProviders: ["password", "google", "facebook"],
+    });
+
+    await app.close();
+  });
+
+  it("links oauth provider for authenticated user", async () => {
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/users/me/auth-providers/link",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token",
+        state: "oauth_state_link_google_12345",
+        nonce: "oauth_nonce_link_google_12345",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      linkedProviders: ["password", "google"],
+    });
+
+    await app.close();
+  });
+
+  it("returns 409 for replayed oauth login attempts", async () => {
+    const app = await buildApp();
+    const payload = {
+      provider: "google",
+      sessionToken: "oauth-session-token",
+      state: "oauth_state_replay_login_12345",
+      nonce: "oauth_nonce_replay_login_12345",
+    };
+
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload,
+    });
+
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload,
+    });
+
+    expect(first.statusCode).toBe(200);
+    expect(replay.statusCode).toBe(409);
+    expect(replay.json()).toEqual({ message: "OAuth replay detected" });
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid oauth state/nonce", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token",
+        state: "short-state",
+        nonce: "short-nonce",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("returns 429 when oauth login rate limit is exceeded", async () => {
+    const app = await buildApp();
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/oauth",
+        headers: {
+          "x-forwarded-for": "203.0.113.10",
+        },
+        payload: {
+          provider: "google",
+          sessionToken: `oauth-session-token-rate-${attempt}`,
+          state: `oauth_state_rate_limit_login_${attempt}_12345`,
+          nonce: `oauth_nonce_rate_limit_login_${attempt}_12345`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+    }
+
+    const limitedResponse = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      headers: {
+        "x-forwarded-for": "203.0.113.10",
+      },
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token-rate-final",
+        state: "oauth_state_rate_limit_login_final_12345",
+        nonce: "oauth_nonce_rate_limit_login_final_12345",
+      },
+    });
+
+    expect(limitedResponse.statusCode).toBe(429);
+    expect(limitedResponse.json()).toEqual({
+      message: "Too many OAuth attempts, please retry later",
+    });
+
+    await app.close();
+  });
+
+  it("returns 429 when oauth link rate limit is exceeded", async () => {
+    const app = await buildApp();
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/users/me/auth-providers/link",
+        headers: {
+          authorization: "Bearer access-token",
+          "x-forwarded-for": "203.0.113.11",
+        },
+        payload: {
+          provider: "google",
+          sessionToken: `oauth-session-token-link-rate-${attempt}`,
+          state: `oauth_state_rate_limit_link_${attempt}_12345`,
+          nonce: `oauth_nonce_rate_limit_link_${attempt}_12345`,
+        },
+      });
+
+      expect(response.statusCode).toBe(200);
+    }
+
+    const limitedResponse = await app.inject({
+      method: "POST",
+      url: "/api/users/me/auth-providers/link",
+      headers: {
+        authorization: "Bearer access-token",
+        "x-forwarded-for": "203.0.113.11",
+      },
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token-link-rate-final",
+        state: "oauth_state_rate_limit_link_final_12345",
+        nonce: "oauth_nonce_rate_limit_link_final_12345",
+      },
+    });
+
+    expect(limitedResponse.statusCode).toBe(429);
+    expect(limitedResponse.json()).toEqual({
+      message: "Too many OAuth attempts, please retry later",
+    });
+
+    await app.close();
+  });
+
+  it("supports mixed auth flow: password login then social link", async () => {
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
+
+    const app = await buildApp();
+
+    const loginResponse = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: {
+        email: "user@example.com",
+        password: "StrongPass123",
+      },
+    });
+
+    expect(loginResponse.statusCode).toBe(200);
+
+    const linkResponse = await app.inject({
+      method: "POST",
+      url: "/api/users/me/auth-providers/link",
+      headers: {
+        authorization: `Bearer ${loginResponse.json().accessToken}`,
+      },
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token-mixed-password",
+        state: "oauth_state_mixed_password_12345",
+        nonce: "oauth_nonce_mixed_password_12345",
+      },
+    });
+
+    expect(linkResponse.statusCode).toBe(200);
+    expect(linkResponse.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      linkedProviders: ["password", "google"],
+    });
+
+    await app.close();
+  });
+
+  it("supports mixed auth flow: social login then link another social provider", async () => {
+    verifyClerkSessionTokenMock
+      .mockResolvedValueOnce({
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        emailVerified: true,
+        firstName: "User",
+        lastName: "Example",
+        fullName: "User Example",
+      })
+      .mockResolvedValueOnce({
+        providerUserId: "facebook-user-1",
+        email: "user@example.com",
+        emailVerified: true,
+        firstName: "User",
+        lastName: "Example",
+        fullName: "User Example",
+      });
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+      {
+        id: "identity-facebook-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "facebook",
+        providerUserId: "facebook-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
+
+    const app = await buildApp();
+
+    const oauthLoginResponse = await app.inject({
+      method: "POST",
+      url: "/api/auth/oauth",
+      payload: {
+        provider: "google",
+        sessionToken: "oauth-session-token-mixed-google",
+        state: "oauth_state_mixed_social_login_12345",
+        nonce: "oauth_nonce_mixed_social_login_12345",
+      },
+    });
+
+    expect(oauthLoginResponse.statusCode).toBe(200);
+
+    const linkResponse = await app.inject({
+      method: "POST",
+      url: "/api/users/me/auth-providers/link",
+      headers: {
+        authorization: `Bearer ${oauthLoginResponse.json().accessToken}`,
+      },
+      payload: {
+        provider: "facebook",
+        sessionToken: "oauth-session-token-mixed-facebook",
+        state: "oauth_state_mixed_social_link_12345",
+        nonce: "oauth_nonce_mixed_social_link_12345",
+      },
+    });
+
+    expect(linkResponse.statusCode).toBe(200);
+    expect(linkResponse.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      linkedProviders: ["password", "google", "facebook"],
+    });
+
+    await app.close();
+  });
+
+  it("returns 409 when unlinking last social auth provider", async () => {
+    listIdentitiesByUserIdMock.mockResolvedValueOnce([
+      {
+        id: "identity-google-1",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        provider: "google",
+        providerUserId: "google-user-1",
+        email: "user@example.com",
+        createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    ]);
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/users/me/auth-providers/google",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({
+      message: "Cannot unlink the last authentication provider",
+    });
+
+    await app.close();
+  });
+
+  it("unlinks oauth provider for authenticated user", async () => {
+    listIdentitiesByUserIdMock
+      .mockResolvedValueOnce([
+        {
+          id: "identity-google-1",
+          userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+          provider: "google",
+          providerUserId: "google-user-1",
+          email: "user@example.com",
+          createdAt: new Date("2026-04-18T12:00:00.000Z"),
+        },
+        {
+          id: "identity-facebook-1",
+          userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+          provider: "facebook",
+          providerUserId: "facebook-user-1",
+          email: "user@example.com",
+          createdAt: new Date("2026-04-18T12:00:00.000Z"),
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: "identity-facebook-1",
+          userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+          provider: "facebook",
+          providerUserId: "facebook-user-1",
+          email: "user@example.com",
+          createdAt: new Date("2026-04-18T12:00:00.000Z"),
+        },
+      ]);
+
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/users/me/auth-providers/google",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(unlinkIdentityMock).toHaveBeenCalledWith(
+      "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      "google",
+    );
+    expect(response.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      linkedProviders: ["password", "facebook"],
     });
 
     await app.close();

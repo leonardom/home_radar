@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 const AuthProviderSchema = z.enum(["password", "google", "facebook"]);
+const SocialAuthProviderSchema = z.enum(["google", "facebook"]);
 
 export const UserProfileResponseSchema = z.object({
   id: z.uuid(),
@@ -16,6 +17,17 @@ export const UserProfileResponseSchema = z.object({
 export const UserAuthProvidersResponseSchema = z.object({
   userId: z.uuid(),
   linkedProviders: z.array(AuthProviderSchema),
+});
+
+export const LinkAuthProviderRequestSchema = z.object({
+  provider: SocialAuthProviderSchema,
+  sessionToken: z.string().min(1),
+  state: z.string().trim().min(16).max(256),
+  nonce: z.string().trim().min(16).max(256),
+});
+
+export const UnlinkAuthProviderParamsSchema = z.object({
+  provider: SocialAuthProviderSchema,
 });
 
 export const UpdateProfileRequestSchema = z

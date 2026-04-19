@@ -179,6 +179,9 @@ Public:
 Protected (Bearer access token):
 
 - `GET /api/users/me`
+- `GET /api/users/me/auth-providers`
+- `POST /api/users/me/auth-providers/link`
+- `DELETE /api/users/me/auth-providers/:provider`
 - `PATCH /api/users/me`
 - `DELETE /api/users/me`
 - `GET /api/users/me/preferences`
@@ -244,7 +247,9 @@ Request body:
 ```json
 {
   "provider": "google",
-  "sessionToken": "<clerk-session-or-jwt-token>"
+   "sessionToken": "<clerk-session-or-jwt-token>",
+   "state": "<oauth-state>",
+   "nonce": "<oauth-nonce>"
 }
 ```
 
@@ -267,6 +272,7 @@ Error contracts:
 - `400` validation errors (including unsupported provider)
 - `400` missing or unverified email in Clerk claims
 - `409` provider identity conflict (already linked to another user)
+- `429` rate-limited OAuth/session exchange attempts
 
 ### Clerk Social Setup Checklist
 
@@ -281,6 +287,53 @@ Error contracts:
    - `CLERK_API_URL` (optional override)
    - `CLERK_SKIP_JWKS_CACHE` (optional)
 6. Restart the backend after env changes.
+
+### Local Testing Runbook (Clerk + Google/Facebook)
+
+1. Start backend-api locally:
+
+```bash
+npm run dev
+```
+
+2. From the frontend, complete social sign-in with Clerk and obtain a session token/JWT.
+3. Exchange the Clerk token for backend tokens:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/oauth \
+   -H "Content-Type: application/json" \
+   -d '{"provider":"google","sessionToken":"<clerk-token>","state":"<oauth-state>","nonce":"<oauth-nonce>"}'
+```
+
+4. Use returned backend access token to inspect linked providers:
+
+```bash
+curl http://localhost:3000/api/users/me/auth-providers \
+   -H "Authorization: Bearer <backend-access-token>"
+```
+
+5. Link an additional social provider to the same account:
+
+```bash
+curl -X POST http://localhost:3000/api/users/me/auth-providers/link \
+   -H "Authorization: Bearer <backend-access-token>" \
+   -H "Content-Type: application/json" \
+   -d '{"provider":"facebook","sessionToken":"<facebook-clerk-token>","state":"<oauth-state>","nonce":"<oauth-nonce>"}'
+```
+
+6. Unlink a social provider (lockout safeguards apply):
+
+```bash
+curl -X DELETE http://localhost:3000/api/users/me/auth-providers/google \
+   -H "Authorization: Bearer <backend-access-token>"
+```
+
+Expected behavior notes:
+
+- Linking requires verified Clerk email matching the current backend user email.
+- Unlinking the last linked social provider is blocked with `409`.
+- Invalid Clerk tokens return `401`.
+- Excessive OAuth exchange/link attempts from the same client IP return `429`.
 
 ## Matching and Persistence Notes
 

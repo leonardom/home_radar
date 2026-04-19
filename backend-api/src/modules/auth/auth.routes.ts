@@ -6,9 +6,14 @@ import {
   InvalidCredentialsError,
   InvalidRefreshTokenError,
   OAuthIdentityEmailRequiredError,
+  OAuthInvalidStateNonceError,
+  OAuthRateLimitExceededError,
+  OAuthReplayDetectedError,
 } from "./auth.errors";
+import { oauthRateLimitService } from "./oauth-rate-limit.service";
 import { AuthIdentityService, ProviderIdentityConflictError } from "./auth-identity.service";
 import { ClerkTokenAdapter, ClerkTokenValidationError } from "./clerk-token.adapter";
+import { oauthReplayProtectionService } from "./oauth-security.service";
 import { RefreshTokensRepository } from "./refresh-tokens.repository";
 import { DuplicateEmailError } from "../users/users.errors";
 import { UsersRepository } from "../users/users.repository";
@@ -44,6 +49,14 @@ const authService = new AuthService(
 );
 
 export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> => {
+  const resolveClientIdentifier = (forwardedFor: string | string[] | undefined, ip: string): string => {
+    if (typeof forwardedFor === "string" && forwardedFor.trim().length > 0) {
+      return forwardedFor.split(",")[0]?.trim() || ip;
+    }
+
+    return ip;
+  };
+
   app.post("/auth/register", async (request, reply) => {
     try {
       const payload = RegisterRequestSchema.parse(request.body);
@@ -84,6 +97,15 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
     try {
       const payload = LoginRequestSchema.parse(request.body);
       const tokens = await authService.login(payload);
+      const subject = tokenService.verifyAccessToken(tokens.accessToken).sub;
+      request.log.info(
+        {
+          event: "auth.login.success",
+          method: "password",
+          userId: subject,
+        },
+        "Auth method used",
+      );
       const safeResponse = AuthTokensResponseSchema.parse(tokens);
       return reply.code(200).send(safeResponse);
     } catch (error: unknown) {
@@ -98,6 +120,14 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
       }
 
       if (error instanceof InvalidCredentialsError) {
+        request.log.warn(
+          {
+            event: "auth.login.failed",
+            method: "password",
+            reason: "invalid_credentials",
+          },
+          "Auth method failed",
+        );
         return reply.code(401).send({ message: "Invalid credentials" });
       }
 
@@ -133,7 +163,25 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
   app.post("/auth/oauth", async (request, reply) => {
     try {
       const payload = OAuthLoginRequestSchema.parse(request.body);
+      const clientIdentifier = resolveClientIdentifier(request.headers["x-forwarded-for"], request.ip);
+      oauthRateLimitService.checkAndConsume("oauth-login", clientIdentifier);
+      oauthReplayProtectionService.registerAttempt({
+        scope: "login",
+        provider: payload.provider,
+        sessionToken: payload.sessionToken,
+        state: payload.state,
+        nonce: payload.nonce,
+      });
       const tokens = await authService.oauthLogin(payload);
+      const subject = tokenService.verifyAccessToken(tokens.accessToken).sub;
+      request.log.info(
+        {
+          event: "auth.login.success",
+          method: payload.provider,
+          userId: subject,
+        },
+        "Auth method used",
+      );
       const safeResponse = AuthTokensResponseSchema.parse(tokens);
       return reply.code(200).send(safeResponse);
     } catch (error: unknown) {
@@ -148,11 +196,55 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
       }
 
       if (error instanceof ClerkTokenValidationError) {
+        request.log.warn(
+          {
+            event: "auth.login.failed",
+            method: "oauth",
+            reason: "invalid_oauth_token",
+          },
+          "Auth method failed",
+        );
         return reply.code(401).send({ message: "Invalid OAuth session token" });
       }
 
       if (error instanceof OAuthIdentityEmailRequiredError) {
+        request.log.warn(
+          {
+            event: "auth.login.failed",
+            method: "oauth",
+            reason: "missing_or_unverified_email",
+          },
+          "Auth method failed",
+        );
         return reply.code(400).send({ message: "A verified email is required for OAuth login" });
+      }
+
+      if (error instanceof OAuthInvalidStateNonceError) {
+        return reply.code(400).send({ message: "Invalid OAuth state or nonce" });
+      }
+
+      if (error instanceof OAuthReplayDetectedError) {
+        request.log.warn(
+          {
+            event: "auth.login.failed",
+            method: "oauth",
+            reason: "replay_detected",
+          },
+          "Auth method failed",
+        );
+        return reply.code(409).send({ message: "OAuth replay detected" });
+      }
+
+      if (error instanceof OAuthRateLimitExceededError) {
+        request.log.warn(
+          {
+            event: "auth.login.failed",
+            method: "oauth",
+            reason: "rate_limited",
+          },
+          "Auth method failed",
+        );
+        return reply.code(429).send({ message: "Too many OAuth attempts, please retry later" });
       }
 
       if (error instanceof ProviderIdentityConflictError) {

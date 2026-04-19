@@ -2,7 +2,12 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { userIdentitiesTable } from "../../database/schema";
-import type { AuthProvider, LinkUserIdentityInput, UserIdentity } from "./user-identities.types";
+import type {
+  AuthProvider,
+  LinkUserIdentityInput,
+  SocialAuthProvider,
+  UserIdentity,
+} from "./user-identities.types";
 
 const mapIdentity = (row: typeof userIdentitiesTable.$inferSelect): UserIdentity => {
   return {
@@ -69,5 +74,15 @@ export class UserIdentitiesRepository {
     }
 
     return existing;
+  }
+
+  async unlinkIdentity(userId: string, provider: SocialAuthProvider): Promise<boolean> {
+    const deleted = await db
+      .delete(userIdentitiesTable)
+      .where(and(eq(userIdentitiesTable.userId, userId), eq(userIdentitiesTable.provider, provider)))
+      .returning({ id: userIdentitiesTable.id })
+      .then((rows) => rows.at(0) ?? null);
+
+    return deleted !== null;
   }
 }

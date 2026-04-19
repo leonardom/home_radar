@@ -12,6 +12,8 @@ export const LoginRequestSchema = z.object({
 export const OAuthLoginRequestSchema = z.object({
   provider: z.enum(["google", "facebook"]),
   sessionToken: z.string().min(1),
+  state: z.string().trim().min(16).max(256),
+  nonce: z.string().trim().min(16).max(256),
 });
 
 export const RefreshRequestSchema = z.object({

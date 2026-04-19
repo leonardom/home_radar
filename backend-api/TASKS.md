@@ -270,12 +270,12 @@ Goal: Offer both auth methods in one coherent API with clear documentation, obse
 
 - [x] Add explicit auth method metadata in user/profile responses (e.g., linked providers list).
 - [x] Provide endpoint to list linked auth providers for the current user.
-- [ ] Add endpoint to link/unlink social providers (with safeguards to prevent lockout).
-- [ ] Enforce security checks: verified email requirement, nonce/state handling, and replay protection for OAuth flows.
-- [ ] Add audit/event logs for auth method usage (password login vs Google/Facebook login).
-- [ ] Add rate-limiting and abuse controls specific to OAuth/session exchange endpoints.
-- [ ] Update README with complete setup/runbook for Clerk + Google + Facebook and local testing steps.
-- [ ] Add end-to-end tests covering mixed auth usage (password account later linked to social, and vice versa).
+- [x] Add endpoint to link/unlink social providers (with safeguards to prevent lockout).
+- [x] Enforce security checks: verified email requirement, nonce/state handling, and replay protection for OAuth flows.
+- [x] Add audit/event logs for auth method usage (password login vs Google/Facebook login).
+- [x] Add rate-limiting and abuse controls specific to OAuth/session exchange endpoints.
+- [x] Update README with complete setup/runbook for Clerk + Google + Facebook and local testing steps.
+- [x] Add end-to-end tests covering mixed auth usage (password account later linked to social, and vice versa).
 
 ## Notes
 
