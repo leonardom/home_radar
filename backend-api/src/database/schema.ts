@@ -138,3 +138,34 @@ export const matchesTable = pgTable(
     matchedAtIdx: index("matches_matched_at_idx").on(table.matchedAt),
   }),
 );
+
+export const notificationsTable = pgTable(
+  "notifications",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    matchId: uuid("match_id")
+      .notNull()
+      .references(() => matchesTable.id, { onDelete: "cascade" }),
+    channel: varchar("channel", { length: 20 }).notNull().default("email"),
+    subject: varchar("subject", { length: 255 }).notNull(),
+    body: text("body").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    failedAt: timestamp("failed_at", { withTimezone: true }),
+    failureReason: text("failure_reason"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    matchChannelUnique: uniqueIndex("notifications_match_channel_unique").on(
+      table.matchId,
+      table.channel,
+    ),
+    userIdIdx: index("notifications_user_id_idx").on(table.userId),
+    statusIdx: index("notifications_status_idx").on(table.status),
+    createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
+  }),
+);

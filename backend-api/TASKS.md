@@ -173,6 +173,65 @@ Goal: Make sync safe to operate in production-like environments with clear obser
 - [x] Add unit tests for mapper, watermark progression, and idempotent upsert behavior.
 - [x] Add integration tests for backfill and incremental sync scenarios.
 
+## Task 11 - Notification Creation (FR-13)
+
+Goal: Generate a notification whenever a new user-property match is created.
+
+### Subtasks
+
+- [x] Define notification domain model and event contract (`match.created` -> notification payload).
+- [x] Add `notifications` table schema (id, userId, matchId, channel, subject, body, status, createdAt, updatedAt).
+- [x] Add foreign keys to users and matches with appropriate delete behavior.
+- [x] Add repository methods: createNotification, listByUser, markSent, markFailed.
+- [x] Integrate notification creation into match persistence flow (only for newly created matches).
+- [x] Add idempotency guard to avoid duplicate notifications for the same match/channel.
+- [x] Add unit tests for notification creation service logic.
+- [x] Add integration test to verify match creation triggers notification record creation.
+
+## Task 12 - Notification Delivery (FR-14)
+
+Goal: Deliver notifications through email for MVP.
+
+### Subtasks
+
+- [ ] Choose and configure email provider abstraction (SMTP or provider SDK) via environment variables.
+- [ ] Implement email template builder for match alerts (subject + body with property details and filter context).
+- [ ] Implement delivery service to send pending email notifications.
+- [ ] Add retry-safe send flow so transient failures do not lose notifications.
+- [ ] Update notification status lifecycle (`pending` -> `sent` / `failed`).
+- [ ] Add command/worker entrypoint for processing outbound notifications.
+- [ ] Add unit tests for email payload formatting and delivery error handling.
+- [ ] Add integration test with mocked provider verifying successful send and status update.
+
+## Task 13 - Notification Preferences (FR-15)
+
+Goal: Support instant notifications now and keep digest mode ready for future rollout.
+
+### Subtasks
+
+- [ ] Add notification preference model linked to users (mode: `instant` for MVP, `digest` reserved).
+- [ ] Add DB migration for preferences with sane defaults (`instant`).
+- [ ] Expose profile/preferences API to read and update notification mode.
+- [ ] Enforce MVP behavior: instant sends enabled; digest mode stored but not dispatched yet.
+- [ ] Design digest aggregation contract and scheduler interface for future implementation.
+- [ ] Add unit tests for preference validation and mode switching behavior.
+- [ ] Add integration tests for preference update and instant notification path.
+
+## Task 14 - Notification Tracking and Reliability (FR-16)
+
+Goal: Track notification sent status, delivery attempts, and failures with operational visibility.
+
+### Subtasks
+
+- [ ] Extend notification storage with tracking fields (`attemptCount`, `lastAttemptAt`, `sentAt`, `failureReason`).
+- [ ] Implement attempt counter increment on each delivery try.
+- [ ] Persist failure details and keep failed notifications queryable for troubleshooting.
+- [ ] Add max-attempt policy and terminal status for exhausted retries.
+- [ ] Add endpoint/admin query for notification delivery metrics and failed queue visibility.
+- [ ] Add structured logs for notification attempts, successes, and failures.
+- [ ] Add unit tests for status transitions and retry state machine.
+- [ ] Add integration tests covering success, retry, and terminal failure scenarios.
+
 ## Notes
 
 - Update each checkbox as work progresses.
