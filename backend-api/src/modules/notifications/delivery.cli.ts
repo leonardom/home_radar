@@ -1,4 +1,5 @@
 import { closeDatabasePool } from "../../config/db";
+import { env } from "../../config/env";
 import { UsersRepository } from "../users/users.repository";
 import { createEmailSender } from "./notification-email-factory";
 import { NotificationsDeliveryService } from "./notifications.delivery.service";
@@ -25,6 +26,7 @@ const run = async (): Promise<void> => {
     notificationsRepository,
     usersRepository,
     emailSender,
+    env.NOTIFICATIONS_MAX_ATTEMPTS,
   );
 
   const summary = await deliveryService.deliverPending(limit);

@@ -10,6 +10,8 @@ export type Notification = {
   subject: string;
   body: string;
   status: NotificationStatus;
+  attemptCount: number;
+  lastAttemptAt: Date | null;
   sentAt: Date | null;
   failedAt: Date | null;
   failureReason: string | null;
@@ -23,4 +25,10 @@ export type CreateNotificationInput = {
   channel: NotificationChannel;
   subject: string;
   body: string;
+};
+
+export type NotificationDeliveryMetrics = {
+  pendingCount: number;
+  sentCount: number;
+  failedCount: number;
 };

@@ -1,8 +1,12 @@
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, count, eq, lt, sql } from "drizzle-orm";
 
 import { db } from "../../config/db";
 import { notificationsTable } from "../../database/schema";
-import type { CreateNotificationInput, Notification } from "./notifications.types";
+import type {
+  CreateNotificationInput,
+  Notification,
+  NotificationDeliveryMetrics,
+} from "./notifications.types";
 
 const mapNotification = (row: typeof notificationsTable.$inferSelect): Notification => {
   return {
@@ -13,6 +17,8 @@ const mapNotification = (row: typeof notificationsTable.$inferSelect): Notificat
     subject: row.subject,
     body: row.body,
     status: row.status as Notification["status"],
+    attemptCount: row.attemptCount,
+    lastAttemptAt: row.lastAttemptAt,
     sentAt: row.sentAt,
     failedAt: row.failedAt,
     failureReason: row.failureReason,
@@ -69,15 +75,65 @@ export class NotificationsRepository {
     return rows.map(mapNotification);
   }
 
-  async listPending(limit: number = 100): Promise<Notification[]> {
+  async listPending(limit: number = 100, maxAttempts: number = 3): Promise<Notification[]> {
     const rows = await db
       .select()
       .from(notificationsTable)
-      .where(eq(notificationsTable.status, "pending"))
+      .where(
+        and(
+          eq(notificationsTable.status, "pending"),
+          lt(notificationsTable.attemptCount, maxAttempts),
+        ),
+      )
       .orderBy(asc(notificationsTable.createdAt))
       .limit(limit);
 
     return rows.map(mapNotification);
+  }
+
+  async listFailed(limit: number = 50): Promise<Notification[]> {
+    const rows = await db
+      .select()
+      .from(notificationsTable)
+      .where(eq(notificationsTable.status, "failed"))
+      .orderBy(asc(notificationsTable.updatedAt))
+      .limit(limit);
+
+    return rows.map(mapNotification);
+  }
+
+  async markAttempt(id: string): Promise<Notification | null> {
+    const now = new Date();
+
+    const row = await db
+      .update(notificationsTable)
+      .set({
+        attemptCount: sql`${notificationsTable.attemptCount} + 1`,
+        lastAttemptAt: now,
+        updatedAt: now,
+      })
+      .where(eq(notificationsTable.id, id))
+      .returning()
+      .then((rows) => rows.at(0) ?? null);
+
+    return row ? mapNotification(row) : null;
+  }
+
+  async recordAttemptFailure(id: string, reason: string): Promise<Notification | null> {
+    const now = new Date();
+
+    const row = await db
+      .update(notificationsTable)
+      .set({
+        failedAt: now,
+        failureReason: reason,
+        updatedAt: now,
+      })
+      .where(eq(notificationsTable.id, id))
+      .returning()
+      .then((rows) => rows.at(0) ?? null);
+
+    return row ? mapNotification(row) : null;
   }
 
   async markSent(id: string): Promise<Notification | null> {
@@ -113,5 +169,28 @@ export class NotificationsRepository {
       .then((rows) => rows.at(0) ?? null);
 
     return row ? mapNotification(row) : null;
+  }
+
+  async getDeliveryMetrics(): Promise<NotificationDeliveryMetrics> {
+    const [pendingRows, sentRows, failedRows] = await Promise.all([
+      db
+        .select({ value: count() })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.status, "pending")),
+      db
+        .select({ value: count() })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.status, "sent")),
+      db
+        .select({ value: count() })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.status, "failed")),
+    ]);
+
+    return {
+      pendingCount: pendingRows.at(0)?.value ?? 0,
+      sentCount: sentRows.at(0)?.value ?? 0,
+      failedCount: failedRows.at(0)?.value ?? 0,
+    };
   }
 }

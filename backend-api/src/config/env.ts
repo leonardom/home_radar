@@ -16,6 +16,7 @@ const EnvSchema = z.object({
   ENFORCE_MIN_ONE_FILTER: z.coerce.boolean().default(false),
   EMAIL_FROM: z.string().email().default("no-reply@home-radar.local"),
   SENDGRID_API_KEY: z.string().min(1).optional(),
+  NOTIFICATIONS_MAX_ATTEMPTS: z.coerce.number().int().positive().default(3),
 });
 
 const parsedEnv = EnvSchema.safeParse(process.env);

@@ -30,6 +30,8 @@ const {
   listSyncStatesMock,
   getOrCreateNotificationPreferenceMock,
   updateNotificationPreferenceMock,
+  listFailedNotificationsMock,
+  getNotificationMetricsMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -60,6 +62,8 @@ const {
     listSyncStatesMock: vi.fn<() => Promise<unknown[]>>(),
     getOrCreateNotificationPreferenceMock: vi.fn<() => Promise<unknown>>(),
     updateNotificationPreferenceMock: vi.fn<() => Promise<unknown>>(),
+    listFailedNotificationsMock: vi.fn<() => Promise<unknown[]>>(),
+    getNotificationMetricsMock: vi.fn<() => Promise<unknown>>(),
   };
 });
 
@@ -158,6 +162,15 @@ vi.mock("../src/modules/notification-preferences/notification-preferences.reposi
   return { NotificationPreferencesRepository };
 });
 
+vi.mock("../src/modules/notifications/notifications.repository", () => {
+  class NotificationsRepository {
+    listFailed = listFailedNotificationsMock;
+    getDeliveryMetrics = getNotificationMetricsMock;
+  }
+
+  return { NotificationsRepository };
+});
+
 import { buildApp } from "../src/app";
 
 describe("API routes", () => {
@@ -190,6 +203,8 @@ describe("API routes", () => {
     listSyncStatesMock.mockReset();
     getOrCreateNotificationPreferenceMock.mockReset();
     updateNotificationPreferenceMock.mockReset();
+    listFailedNotificationsMock.mockReset();
+    getNotificationMetricsMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -273,6 +288,25 @@ describe("API routes", () => {
       createdAt: new Date("2026-04-18T12:00:00.000Z"),
       updatedAt: new Date("2026-04-18T13:00:00.000Z"),
     });
+    getNotificationMetricsMock.mockResolvedValue({
+      pendingCount: 2,
+      sentCount: 5,
+      failedCount: 1,
+    });
+    listFailedNotificationsMock.mockResolvedValue([
+      {
+        id: "d99d02fe-cdde-4e52-8bb1-281fdad2a5a5",
+        userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+        matchId: "c0cc3103-c012-46e0-b7b0-1f4299a58f0f",
+        status: "failed",
+        attemptCount: 3,
+        lastAttemptAt: new Date("2026-04-18T14:00:00.000Z"),
+        sentAt: null,
+        failedAt: new Date("2026-04-18T14:00:00.000Z"),
+        failureReason: "SendGrid timeout",
+        updatedAt: new Date("2026-04-18T14:00:00.000Z"),
+      },
+    ]);
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -793,6 +827,30 @@ describe("API routes", () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().states).toHaveLength(1);
     expect(response.json().states[0].key).toBe("scraper:listings:all");
+
+    await app.close();
+  });
+
+  it("returns notifications delivery diagnostics", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/notifications/status",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().metrics).toEqual({
+      pendingCount: 2,
+      sentCount: 5,
+      failedCount: 1,
+    });
+    expect(response.json().failed).toHaveLength(1);
+    expect(response.json().failed[0].attemptCount).toBe(3);
+    expect(response.json().failed[0].failureReason).toBe("SendGrid timeout");
 
     await app.close();
   });

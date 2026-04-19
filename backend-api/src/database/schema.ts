@@ -168,6 +168,8 @@ export const notificationsTable = pgTable(
     subject: varchar("subject", { length: 255 }).notNull(),
     body: text("body").notNull(),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     failedAt: timestamp("failed_at", { withTimezone: true }),
     failureReason: text("failure_reason"),
@@ -181,6 +183,7 @@ export const notificationsTable = pgTable(
     ),
     userIdIdx: index("notifications_user_id_idx").on(table.userId),
     statusIdx: index("notifications_status_idx").on(table.status),
+    attemptCountIdx: index("notifications_attempt_count_idx").on(table.attemptCount),
     createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
   }),
 );

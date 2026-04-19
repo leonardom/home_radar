@@ -223,14 +223,14 @@ Goal: Track notification sent status, delivery attempts, and failures with opera
 
 ### Subtasks
 
-- [ ] Extend notification storage with tracking fields (`attemptCount`, `lastAttemptAt`, `sentAt`, `failureReason`).
-- [ ] Implement attempt counter increment on each delivery try.
-- [ ] Persist failure details and keep failed notifications queryable for troubleshooting.
-- [ ] Add max-attempt policy and terminal status for exhausted retries.
-- [ ] Add endpoint/admin query for notification delivery metrics and failed queue visibility.
-- [ ] Add structured logs for notification attempts, successes, and failures.
-- [ ] Add unit tests for status transitions and retry state machine.
-- [ ] Add integration tests covering success, retry, and terminal failure scenarios.
+- [x] Extend notification storage with tracking fields (`attemptCount`, `lastAttemptAt`, `sentAt`, `failureReason`).
+- [x] Implement attempt counter increment on each delivery try.
+- [x] Persist failure details and keep failed notifications queryable for troubleshooting.
+- [x] Add max-attempt policy and terminal status for exhausted retries.
+- [x] Add endpoint/admin query for notification delivery metrics and failed queue visibility.
+- [x] Add structured logs for notification attempts, successes, and failures.
+- [x] Add unit tests for status transitions and retry state machine.
+- [x] Add integration tests covering success, retry, and terminal failure scenarios.
 
 ## Notes
 

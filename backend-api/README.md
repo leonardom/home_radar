@@ -58,6 +58,7 @@ JWT_REFRESH_EXPIRES_DAYS=7
 ENFORCE_MIN_ONE_FILTER=false
 EMAIL_FROM=no-reply@home-radar.local
 SENDGRID_API_KEY=
+NOTIFICATIONS_MAX_ATTEMPTS=3
 ```
 
 Notes:
@@ -69,6 +70,7 @@ Notes:
 - `ENFORCE_MIN_ONE_FILTER`: optional free-tier rule for filters delete behavior.
 - `EMAIL_FROM`: sender used for outbound match alert emails.
 - `SENDGRID_API_KEY`: SendGrid API key used by the notification worker. If empty, email sending falls back to log mode.
+- `NOTIFICATIONS_MAX_ATTEMPTS`: max delivery retries before a notification is marked `failed`.
 
 ## Install
 
@@ -171,6 +173,7 @@ Protected (Bearer access token):
 - `DELETE /api/users/me`
 - `GET /api/users/me/preferences`
 - `PATCH /api/users/me/preferences`
+- `GET /api/notifications/status`
 - `POST /api/filters`
 - `GET /api/filters`
 - `PATCH /api/filters/:id`
