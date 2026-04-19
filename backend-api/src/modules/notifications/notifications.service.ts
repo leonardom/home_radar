@@ -1,4 +1,5 @@
 import type { Match } from "../matches/matches.types";
+import { NotificationPreferencesRepository } from "../notification-preferences/notification-preferences.repository";
 import type { MatchCreatedNotificationEvent } from "./notifications.events";
 import { NotificationsRepository } from "./notifications.repository";
 import type { Notification } from "./notifications.types";
@@ -12,7 +13,10 @@ const generateEventId = (): string => {
 };
 
 export class NotificationsService {
-  constructor(private readonly notificationsRepository: NotificationsRepository) {}
+  constructor(
+    private readonly notificationsRepository: NotificationsRepository,
+    private readonly notificationPreferencesRepository: NotificationPreferencesRepository,
+  ) {}
 
   async createForMatches(matches: Match[]): Promise<Notification[]> {
     const notifications: Notification[] = [];
@@ -26,14 +30,23 @@ export class NotificationsService {
       };
 
       const notification = await this.createForMatchEvent(event);
-      notifications.push(notification);
+      if (notification) {
+        notifications.push(notification);
+      }
     }
 
     return notifications;
   }
 
-  async createForMatchEvent(event: MatchCreatedNotificationEvent): Promise<Notification> {
+  async createForMatchEvent(event: MatchCreatedNotificationEvent): Promise<Notification | null> {
     const { match } = event.payload;
+    const preference = await this.notificationPreferencesRepository.getOrCreateByUserId(
+      match.userId,
+    );
+
+    if (preference.mode !== "instant") {
+      return null;
+    }
 
     return this.notificationsRepository.createNotification({
       userId: match.userId,

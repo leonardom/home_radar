@@ -209,13 +209,13 @@ Goal: Support instant notifications now and keep digest mode ready for future ro
 
 ### Subtasks
 
-- [ ] Add notification preference model linked to users (mode: `instant` for MVP, `digest` reserved).
-- [ ] Add DB migration for preferences with sane defaults (`instant`).
-- [ ] Expose profile/preferences API to read and update notification mode.
-- [ ] Enforce MVP behavior: instant sends enabled; digest mode stored but not dispatched yet.
-- [ ] Design digest aggregation contract and scheduler interface for future implementation.
-- [ ] Add unit tests for preference validation and mode switching behavior.
-- [ ] Add integration tests for preference update and instant notification path.
+- [x] Add notification preference model linked to users (mode: `instant` for MVP, `digest` reserved).
+- [x] Add DB migration for preferences with sane defaults (`instant`).
+- [x] Expose profile/preferences API to read and update notification mode.
+- [x] Enforce MVP behavior: instant sends enabled; digest mode stored but not dispatched yet.
+- [x] Design digest aggregation contract and scheduler interface for future implementation.
+- [x] Add unit tests for preference validation and mode switching behavior.
+- [x] Add integration tests for preference update and instant notification path.
 
 ## Task 14 - Notification Tracking and Reliability (FR-16)
 

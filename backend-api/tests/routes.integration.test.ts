@@ -28,6 +28,8 @@ const {
   listMatchesByUserMock,
   listMatchesByPropertyMock,
   listSyncStatesMock,
+  getOrCreateNotificationPreferenceMock,
+  updateNotificationPreferenceMock,
 } = vi.hoisted(() => {
   return {
     checkDatabaseMock: vi.fn<() => Promise<void>>(),
@@ -56,6 +58,8 @@ const {
     listMatchesByUserMock: vi.fn<() => Promise<unknown[]>>(),
     listMatchesByPropertyMock: vi.fn<() => Promise<unknown[]>>(),
     listSyncStatesMock: vi.fn<() => Promise<unknown[]>>(),
+    getOrCreateNotificationPreferenceMock: vi.fn<() => Promise<unknown>>(),
+    updateNotificationPreferenceMock: vi.fn<() => Promise<unknown>>(),
   };
 });
 
@@ -145,6 +149,15 @@ vi.mock("../src/modules/properties/sync-state.repository", () => {
   return { SyncStateRepository };
 });
 
+vi.mock("../src/modules/notification-preferences/notification-preferences.repository", () => {
+  class NotificationPreferencesRepository {
+    getOrCreateByUserId = getOrCreateNotificationPreferenceMock;
+    updateMode = updateNotificationPreferenceMock;
+  }
+
+  return { NotificationPreferencesRepository };
+});
+
 import { buildApp } from "../src/app";
 
 describe("API routes", () => {
@@ -175,6 +188,8 @@ describe("API routes", () => {
     listMatchesByUserMock.mockReset();
     listMatchesByPropertyMock.mockReset();
     listSyncStatesMock.mockReset();
+    getOrCreateNotificationPreferenceMock.mockReset();
+    updateNotificationPreferenceMock.mockReset();
 
     checkDatabaseMock.mockResolvedValue(undefined);
     hashPasswordMock.mockResolvedValue("hashed-password");
@@ -246,6 +261,18 @@ describe("API routes", () => {
         lastSyncAt: new Date("2026-04-18T11:58:00.000Z"),
       },
     ]);
+    getOrCreateNotificationPreferenceMock.mockResolvedValue({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      mode: "instant",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+    updateNotificationPreferenceMock.mockResolvedValue({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      mode: "digest",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T13:00:00.000Z"),
+    });
 
     findByEmailMock.mockResolvedValue({
       id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
@@ -550,6 +577,67 @@ describe("API routes", () => {
 
     expect(response.statusCode).toBe(204);
     expect(refreshRevokeByUserIdMock).toHaveBeenCalledTimes(1);
+
+    await app.close();
+  });
+
+  it("returns authenticated user notification preferences", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/users/me/preferences",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      mode: "instant",
+      createdAt: "2026-04-18T12:00:00.000Z",
+      updatedAt: "2026-04-18T12:00:00.000Z",
+    });
+
+    await app.close();
+  });
+
+  it("updates authenticated user notification preferences", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/users/me/preferences",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        mode: "digest",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().mode).toBe("digest");
+
+    await app.close();
+  });
+
+  it("returns 400 for invalid notification preferences payload", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/users/me/preferences",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        mode: "hourly",
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
 
     await app.close();
   });

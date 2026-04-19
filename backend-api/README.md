@@ -96,7 +96,7 @@ Generate SQL from schema (if needed):
 npm run db:generate
 ```
 
-Current migrations include users, refresh tokens, search filters, properties, sync state, matches, sync dead letters, and notifications.
+Current migrations include users, refresh tokens, search filters, properties, sync state, matches, sync dead letters, notifications, and notification preferences.
 
 ## Notification Delivery Worker
 
@@ -169,6 +169,8 @@ Protected (Bearer access token):
 - `GET /api/users/me`
 - `PATCH /api/users/me`
 - `DELETE /api/users/me`
+- `GET /api/users/me/preferences`
+- `PATCH /api/users/me/preferences`
 - `POST /api/filters`
 - `GET /api/filters`
 - `PATCH /api/filters/:id`

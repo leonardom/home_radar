@@ -6,6 +6,7 @@ import { MatchingTriggerService } from "../matching/matching.trigger.service";
 import { DatabaseMatchingSink } from "../matches/matches.sink";
 import { MatchesRepository } from "../matches/matches.repository";
 import { MatchesService } from "../matches/matches.service";
+import { NotificationPreferencesRepository } from "../notification-preferences/notification-preferences.repository";
 import { NotificationsRepository } from "../notifications/notifications.repository";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PropertiesRepository } from "./properties.repository";
@@ -41,13 +42,17 @@ const run = async (): Promise<void> => {
   const filtersRepository = new FiltersRepository();
   const propertiesRepository = new PropertiesRepository();
   const matchesRepository = new MatchesRepository();
+  const notificationPreferencesRepository = new NotificationPreferencesRepository();
   const notificationsRepository = new NotificationsRepository();
   const syncStateRepository = new SyncStateRepository();
 
   const matchingService = new MatchingService();
   const eventStore = new InMemoryTriggerEventStore();
   const matchesService = new MatchesService(matchesRepository);
-  const notificationsService = new NotificationsService(notificationsRepository);
+  const notificationsService = new NotificationsService(
+    notificationsRepository,
+    notificationPreferencesRepository,
+  );
   const matchingSink = new DatabaseMatchingSink(matchesService, notificationsService);
   const matchingDispatcher = new MatchingTriggerService(
     matchingService,

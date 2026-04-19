@@ -139,6 +139,21 @@ export const matchesTable = pgTable(
   }),
 );
 
+export const notificationPreferencesTable = pgTable(
+  "notification_preferences",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    mode: varchar("mode", { length: 20 }).notNull().default("instant"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    modeIdx: index("notification_preferences_mode_idx").on(table.mode),
+  }),
+);
+
 export const notificationsTable = pgTable(
   "notifications",
   {
