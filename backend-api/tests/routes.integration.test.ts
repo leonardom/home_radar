@@ -26,6 +26,11 @@ const {
   updateFilterByIdMock,
   deleteFilterByIdMock,
   countFiltersByUserMock,
+  savePropertyMock,
+  listSavedByUserMock,
+  removeSavedByUserAndPropertyMock,
+  isSavedByUserMock,
+  propertyExistsMock,
   createMatchMock,
   findMatchMock,
   listMatchesByUserMock,
@@ -63,6 +68,11 @@ const {
     updateFilterByIdMock: vi.fn<() => Promise<unknown>>(),
     deleteFilterByIdMock: vi.fn<() => Promise<boolean>>(),
     countFiltersByUserMock: vi.fn<() => Promise<number>>(),
+    savePropertyMock: vi.fn<() => Promise<unknown>>(),
+    listSavedByUserMock: vi.fn<() => Promise<unknown[]>>(),
+    removeSavedByUserAndPropertyMock: vi.fn<() => Promise<boolean>>(),
+    isSavedByUserMock: vi.fn<() => Promise<boolean>>(),
+    propertyExistsMock: vi.fn<() => Promise<boolean>>(),
     createMatchMock: vi.fn<() => Promise<unknown>>(),
     findMatchMock: vi.fn<() => Promise<unknown>>(),
     listMatchesByUserMock: vi.fn<() => Promise<unknown[]>>(),
@@ -143,6 +153,18 @@ vi.mock("../src/modules/filters/filters.repository", () => {
   }
 
   return { FiltersRepository };
+});
+
+vi.mock("../src/modules/saved-properties/saved-properties.repository", () => {
+  class SavedPropertiesRepository {
+    saveProperty = savePropertyMock;
+    listSavedByUser = listSavedByUserMock;
+    removeSavedByUserAndProperty = removeSavedByUserAndPropertyMock;
+    isSavedByUser = isSavedByUserMock;
+    propertyExists = propertyExistsMock;
+  }
+
+  return { SavedPropertiesRepository };
 });
 
 vi.mock("../src/modules/matches/matches.repository", () => {
@@ -237,6 +259,11 @@ describe("API routes", () => {
     updateFilterByIdMock.mockReset();
     deleteFilterByIdMock.mockReset();
     countFiltersByUserMock.mockReset();
+    savePropertyMock.mockReset();
+    listSavedByUserMock.mockReset();
+    removeSavedByUserAndPropertyMock.mockReset();
+    isSavedByUserMock.mockReset();
+    propertyExistsMock.mockReset();
     createMatchMock.mockReset();
     findMatchMock.mockReset();
     listMatchesByUserMock.mockReset();
@@ -301,6 +328,36 @@ describe("API routes", () => {
     listFiltersByUserMock.mockResolvedValue([filterFixture]);
     updateFilterByIdMock.mockResolvedValue(filterFixture);
     deleteFilterByIdMock.mockResolvedValue(true);
+
+    const savedPropertyFixture = {
+      id: "2b8893e5-fd5a-4cbc-a4db-5f6de1d98a41",
+      userId: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      propertyId: "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+      savedAt: new Date("2026-04-18T12:30:00.000Z"),
+      property: {
+        id: "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+        source: "chrystals",
+        externalListingId: "listing-123",
+        title: "Modern apartment in Douglas",
+        price: 250000,
+        bedrooms: 2,
+        bathrooms: 1,
+        location: "Douglas",
+        propertyType: "apartment",
+        url: "https://example.com/listing-123",
+        status: "active",
+        lastSeenAt: new Date("2026-04-18T12:00:00.000Z"),
+      },
+    };
+
+    propertyExistsMock.mockResolvedValue(true);
+    isSavedByUserMock.mockResolvedValue(true);
+    savePropertyMock.mockResolvedValue({
+      item: savedPropertyFixture,
+      created: true,
+    });
+    listSavedByUserMock.mockResolvedValue([savedPropertyFixture]);
+    removeSavedByUserAndPropertyMock.mockResolvedValue(true);
 
     const matchFixture = {
       id: "c0cc3103-c012-46e0-b7b0-1f4299a58f0f",
@@ -1324,6 +1381,86 @@ describe("API routes", () => {
     });
 
     expect(response.statusCode).toBe(400);
+
+    await app.close();
+  });
+
+  it("saves a property for authenticated user", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/saved-properties",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        propertyId: "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().propertyId).toBe("6bf9032e-d7fb-405a-9df8-7281d5f6f3e6");
+    expect(response.json().property.title).toBe("Modern apartment in Douglas");
+
+    await app.close();
+  });
+
+  it("lists saved properties for authenticated user", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/saved-properties?limit=20&offset=0&sortBy=savedAt&sortOrder=desc",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().items).toHaveLength(1);
+    expect(response.json().items[0].property.id).toBe("6bf9032e-d7fb-405a-9df8-7281d5f6f3e6");
+
+    await app.close();
+  });
+
+  it("removes saved property for authenticated user", async () => {
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/saved-properties/6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(removeSavedByUserAndPropertyMock).toHaveBeenCalledWith(
+      "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+    );
+
+    await app.close();
+  });
+
+  it("returns 404 when saving unknown property", async () => {
+    propertyExistsMock.mockResolvedValueOnce(false);
+    const app = await buildApp();
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/saved-properties",
+      headers: {
+        authorization: "Bearer access-token",
+      },
+      payload: {
+        propertyId: "6bf9032e-d7fb-405a-9df8-7281d5f6f3e6",
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({ message: "Property not found" });
 
     await app.close();
   });

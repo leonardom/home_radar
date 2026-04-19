@@ -277,6 +277,27 @@ Goal: Offer both auth methods in one coherent API with clear documentation, obse
 - [x] Update README with complete setup/runbook for Clerk + Google + Facebook and local testing steps.
 - [x] Add end-to-end tests covering mixed auth usage (password account later linked to social, and vice versa).
 
+## Task 18 - Saved Properties (FR-17, FR-18)
+
+Goal: Allow authenticated users to save/bookmark properties and manage their saved list.
+
+### Subtasks
+
+- [x] Define saved property domain model (`id`, `userId`, `propertyId`, `createdAt`).
+- [x] Add database schema/migration for `saved_properties` table.
+- [x] Add foreign keys to users/properties with safe delete behavior.
+- [x] Add unique constraint/index for duplicate prevention (`user_id + property_id`).
+- [x] Add repository methods: `saveProperty`, `listSavedByUser`, `removeSavedByUserAndProperty`, `isSavedByUser`.
+- [x] Implement FR-17 endpoint to save/bookmark property (e.g. `POST /saved-properties`).
+- [x] Implement FR-18 endpoint to view saved properties (e.g. `GET /saved-properties`).
+- [x] Implement FR-18 endpoint to remove saved property (e.g. `DELETE /saved-properties/:propertyId`).
+- [x] Enforce authorization so users can only manage their own saved properties.
+- [x] Ensure idempotent save behavior (saving an already saved property should not duplicate records).
+- [x] Standardize response and error contracts (not found, validation, ownership).
+- [x] Add optional filter/sort/pagination contract for saved properties listing.
+- [x] Add unit tests for repository and service dedup/remove behaviors.
+- [x] Add integration tests for save/list/remove flows and auth checks.
+
 ## Notes
 
 - Update each checkbox as work progresses.

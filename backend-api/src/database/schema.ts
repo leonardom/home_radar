@@ -209,3 +209,26 @@ export const notificationsTable = pgTable(
     createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
   }),
 );
+
+export const savedPropertiesTable = pgTable(
+  "saved_properties",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => usersTable.id, { onDelete: "cascade" }),
+    propertyId: uuid("property_id")
+      .notNull()
+      .references(() => propertiesTable.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userPropertyUnique: uniqueIndex("saved_properties_user_property_unique").on(
+      table.userId,
+      table.propertyId,
+    ),
+    userIdIdx: index("saved_properties_user_id_idx").on(table.userId),
+    propertyIdIdx: index("saved_properties_property_id_idx").on(table.propertyId),
+    createdAtIdx: index("saved_properties_created_at_idx").on(table.createdAt),
+  }),
+);

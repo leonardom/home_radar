@@ -49,7 +49,10 @@ const authService = new AuthService(
 );
 
 export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> => {
-  const resolveClientIdentifier = (forwardedFor: string | string[] | undefined, ip: string): string => {
+  const resolveClientIdentifier = (
+    forwardedFor: string | string[] | undefined,
+    ip: string,
+  ): string => {
     if (typeof forwardedFor === "string" && forwardedFor.trim().length > 0) {
       return forwardedFor.split(",")[0]?.trim() || ip;
     }
@@ -163,7 +166,10 @@ export const registerAuthRoutes = async (app: FastifyInstance): Promise<void> =>
   app.post("/auth/oauth", async (request, reply) => {
     try {
       const payload = OAuthLoginRequestSchema.parse(request.body);
-      const clientIdentifier = resolveClientIdentifier(request.headers["x-forwarded-for"], request.ip);
+      const clientIdentifier = resolveClientIdentifier(
+        request.headers["x-forwarded-for"],
+        request.ip,
+      );
       oauthRateLimitService.checkAndConsume("oauth-login", clientIdentifier);
       oauthReplayProtectionService.registerAttempt({
         scope: "login",

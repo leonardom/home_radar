@@ -11,10 +11,7 @@ export class OAuthRateLimitService {
   private maxRequests: number;
   private windowMs: number;
 
-  constructor(
-    maxRequests: number,
-    windowMs: number,
-  ) {
+  constructor(maxRequests: number, windowMs: number) {
     this.maxRequests = maxRequests;
     this.windowMs = windowMs;
   }

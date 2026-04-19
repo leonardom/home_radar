@@ -79,7 +79,9 @@ export class UserIdentitiesRepository {
   async unlinkIdentity(userId: string, provider: SocialAuthProvider): Promise<boolean> {
     const deleted = await db
       .delete(userIdentitiesTable)
-      .where(and(eq(userIdentitiesTable.userId, userId), eq(userIdentitiesTable.provider, provider)))
+      .where(
+        and(eq(userIdentitiesTable.userId, userId), eq(userIdentitiesTable.provider, provider)),
+      )
       .returning({ id: userIdentitiesTable.id })
       .then((rows) => rows.at(0) ?? null);
 

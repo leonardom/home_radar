@@ -66,7 +66,10 @@ const toProfileResponse = (
 };
 
 export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> => {
-  const resolveClientIdentifier = (forwardedFor: string | string[] | undefined, ip: string): string => {
+  const resolveClientIdentifier = (
+    forwardedFor: string | string[] | undefined,
+    ip: string,
+  ): string => {
     if (typeof forwardedFor === "string" && forwardedFor.trim().length > 0) {
       return forwardedFor.split(",")[0]?.trim() || ip;
     }
@@ -125,7 +128,10 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
 
       const payload = LinkAuthProviderRequestSchema.parse(request.body);
       const user = await usersService.getProfile(userId);
-      const clientIdentifier = resolveClientIdentifier(request.headers["x-forwarded-for"], request.ip);
+      const clientIdentifier = resolveClientIdentifier(
+        request.headers["x-forwarded-for"],
+        request.ip,
+      );
       oauthRateLimitService.checkAndConsume("oauth-link", clientIdentifier);
       oauthReplayProtectionService.registerAttempt({
         scope: "link",
@@ -135,14 +141,19 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
         nonce: payload.nonce,
         userId,
       });
-      const identity = await clerkTokenAdapter.verifySessionToken(payload.sessionToken, payload.provider);
+      const identity = await clerkTokenAdapter.verifySessionToken(
+        payload.sessionToken,
+        payload.provider,
+      );
 
       if (!identity.email || !identity.emailVerified) {
         return reply.code(400).send({ message: "A verified email is required to link providers" });
       }
 
       if (identity.email !== user.email.toLowerCase()) {
-        return reply.code(409).send({ message: "OAuth identity email does not match current user" });
+        return reply
+          .code(409)
+          .send({ message: "OAuth identity email does not match current user" });
       }
 
       const linked = await userIdentitiesRepository.linkIdentity({
@@ -274,7 +285,9 @@ export const registerUsersRoutes = async (app: FastifyInstance): Promise<void> =
             },
             "Auth provider unlink failed",
           );
-          return reply.code(409).send({ message: "Cannot unlink the last authentication provider" });
+          return reply
+            .code(409)
+            .send({ message: "Cannot unlink the last authentication provider" });
         }
 
         await userIdentitiesRepository.unlinkIdentity(userId, provider);

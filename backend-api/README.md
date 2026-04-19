@@ -247,9 +247,9 @@ Request body:
 ```json
 {
   "provider": "google",
-   "sessionToken": "<clerk-session-or-jwt-token>",
-   "state": "<oauth-state>",
-   "nonce": "<oauth-nonce>"
+  "sessionToken": "<clerk-session-or-jwt-token>",
+  "state": "<oauth-state>",
+  "nonce": "<oauth-nonce>"
 }
 ```
 
