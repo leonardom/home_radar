@@ -551,6 +551,139 @@ Metrics:
 - Keep token verification strict (signature, expiration, issuer/audience as configured).
 - Keep structured security logs for incident diagnostics.
 
+## Clerk Rollout Plan (Task 22)
+
+Use this plan to promote Clerk-first authentication safely from development to production.
+
+### Phase 1: Development
+
+1. Ensure Clerk dashboard setup is complete for email/password, Google, and Facebook.
+2. Set backend env:
+
+- `CLERK_AUTH_MODE=required`
+- `CLERK_ENABLED_SOCIAL_PROVIDERS=google,facebook`
+- `CLERK_PUBLISHABLE_KEY=<value>`
+- one of `CLERK_SECRET_KEY` or `CLERK_JWT_KEY`
+
+3. Run quality gates:
+
+- `npm run test`
+- `npm run lint`
+
+4. Validate auth endpoints manually:
+
+- `POST /api/auth/session/exchange` for `password`, `google`, `facebook`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+
+5. Verify provider link/unlink behavior and lockout prevention.
+
+Exit criteria:
+
+- All automated checks pass.
+- Session exchange succeeds for all configured providers.
+- Security controls pass (invalid token, replay, rate limit, invalid provider/state/nonce).
+
+### Phase 2: Staging
+
+1. Deploy backend with the same required Clerk env strategy as development.
+2. Run smoke tests for all auth methods and protected-route authorization.
+3. Monitor auth logs for at least one full day of expected staging traffic.
+4. Validate no increase in `401`, `409`, or `429` rates outside expected security tests.
+
+Exit criteria:
+
+- No auth regressions in staging.
+- Protected routes continue to resolve local user ownership correctly.
+- Replay/rate-limit protections behave as expected.
+
+### Phase 3: Production
+
+1. Deploy during a low-traffic window.
+2. Keep release owner and rollback owner on-call for the first monitoring window.
+3. Run post-deploy verification checklist (below) immediately after deploy.
+4. Monitor auth outcomes for at least 60 minutes before closing deployment.
+
+Exit criteria:
+
+- Session exchange and token lifecycle are healthy.
+- No unexpected error spike.
+- Verification queries and endpoint checks are clean.
+
+## Rollback Plan
+
+If production auth regressions are detected:
+
+1. Revert backend deployment to the previous known-good release.
+2. Restore previous environment variables for auth mode if they changed.
+3. Re-run smoke checks for login, refresh, logout, and protected routes.
+4. Keep traffic on the reverted release until root cause is identified and fixed.
+5. Record incident timeline, impact, and remediation before next rollout attempt.
+
+## Release Checklist (Task 22)
+
+Pre-release:
+
+1. `npm run test` passes.
+2. `npm run lint` passes.
+3. Clerk env vars are present and valid for target environment.
+4. Dashboard providers enabled and callback URLs validated.
+
+Deployment gates:
+
+1. `GET /api/health` returns `auth.clerk.ready=true`.
+2. `auth.clerk.providers.google=true`.
+3. `auth.clerk.providers.facebook=true`.
+4. `auth.clerk.issues` is empty.
+
+Post-cutover verification:
+
+1. Exchange Clerk session for API tokens (`password`, `google`, `facebook`) and confirm `200`.
+2. Confirm refresh and logout contracts still work.
+3. Confirm protected routes accept issued access tokens.
+4. Confirm link/unlink safeguards (cannot remove last auth provider).
+
+Post-cutover verification queries (PostgreSQL):
+
+```sql
+-- Active users
+SELECT COUNT(*) AS active_users
+FROM users
+WHERE status = 'active';
+
+-- Provider distribution in linked identities
+SELECT provider, COUNT(*) AS identities
+FROM user_identities
+GROUP BY provider
+ORDER BY provider;
+
+-- Duplicate provider identity rows (must be zero)
+SELECT provider, provider_user_id, COUNT(*) AS duplicates
+FROM user_identities
+GROUP BY provider, provider_user_id
+HAVING COUNT(*) > 1;
+
+-- Orphan linked identities (must be zero)
+SELECT COUNT(*) AS orphan_identities
+FROM user_identities ui
+LEFT JOIN users u ON u.id = ui.user_id
+WHERE u.id IS NULL;
+
+-- Active refresh tokens linked to non-active users (must be zero)
+SELECT COUNT(*) AS invalid_active_refresh_tokens
+FROM refresh_tokens rt
+JOIN users u ON u.id = rt.user_id
+WHERE rt.revoked_at IS NULL
+  AND rt.expires_at > NOW()
+  AND u.status <> 'active';
+```
+
+Release closeout:
+
+1. Capture deployment time, commit SHA, and environment.
+2. Attach checklist evidence (endpoint responses + query outputs).
+3. Record any follow-up actions in `TASKS.md`.
+
 ## Matching and Persistence Notes
 
 - Matching rules evaluate price, bedrooms, location, keywords, and property type.

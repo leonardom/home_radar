@@ -350,22 +350,20 @@ Goal: Replace local password authentication flows with Clerk identity verificati
 
 ## Task 22 - Data Migration, Testing, and Production Cutover (MIG-CLERK-4)
 
-Goal: Execute a safe migration from legacy register/login to Clerk-first authentication with full test coverage and rollback readiness.
+Goal: Finalize Clerk-first authentication rollout with full test coverage and production cutover readiness.
+
+Scope note: No legacy auth users were deployed to production, so legacy backfill and compatibility migration tasks are intentionally out of scope.
 
 ### Subtasks
 
-- [ ] Create migration script/process to backfill `user_identities` for existing password users (`provider=password` + stable external identity reference).
-- [ ] Define strategy for users without Clerk accounts yet (invite, forced first-login sync, or lazy migration on sign-in).
-- [ ] Define strategy to migrate existing social-linked users to canonical Clerk identity records where needed.
-- [ ] Add unit tests for identity merge/link/unlink/conflict branches and compatibility-flag behavior.
-- [ ] Add integration tests for sign-up/sign-in via Clerk email/password end-to-end.
-- [ ] Add integration tests for Google and Facebook first-login provisioning and returning-user login.
-- [ ] Add integration tests for mixed scenarios (password user later links Google/Facebook, and vice versa).
-- [ ] Add integration tests for security controls (invalid token, replay attempts, nonce/state mismatch, rate-limited flows).
-- [ ] Add regression suite for protected routes to confirm no authorization breakage after migration.
-- [ ] Prepare rollout plan with phased enablement (dev -> staging -> production) and explicit rollback steps.
-- [ ] Add release checklist with monitoring gates and post-cutover verification queries.
-- [ ] Remove legacy local register/login code paths after stabilization window and close deprecation tasks.
+- [x] Add unit tests for identity merge/link/unlink/conflict branches in Clerk-first flows.
+- [x] Add integration tests for sign-up/sign-in via Clerk email/password end-to-end.
+- [x] Add integration tests for Google and Facebook first-login provisioning and returning-user login.
+- [x] Add integration tests for mixed Clerk auth scenarios (email/password user links Google/Facebook, and vice versa).
+- [x] Add integration tests for security controls (invalid token, replay attempts, nonce/state mismatch, rate-limited flows).
+- [x] Add regression suite for protected routes to confirm no authorization breakage after migration.
+- [x] Prepare rollout plan with phased enablement (dev -> staging -> production) and explicit rollback steps.
+- [x] Add release checklist with monitoring gates and post-cutover verification queries.
 
 ## Notes
 

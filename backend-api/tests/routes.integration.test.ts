@@ -563,6 +563,221 @@ describe("API routes", () => {
     await app.close();
   });
 
+  it("authenticates with Clerk session exchange (password)", async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "password",
+        sessionToken: "clerk-session-token-password",
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      tokenType: "Bearer",
+      expiresIn: 900,
+    });
+    await app.close();
+  });
+
+  it("authenticates with Clerk session exchange (google)", async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "google",
+        sessionToken: "clerk-session-token-google",
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      accessToken: "access-token",
+      refreshToken: "refresh-token",
+      tokenType: "Bearer",
+      expiresIn: 900,
+    });
+    await app.close();
+  });
+
+  it("provisions a new user on first Clerk session exchange when no account exists", async () => {
+    findByEmailMock.mockResolvedValueOnce(null);
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "google",
+        sessionToken: "clerk-session-token-new-user",
+      },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(createUserMock).toHaveBeenCalledTimes(1);
+    await app.close();
+  });
+
+  it("provisions a new user on first Clerk password session exchange when no account exists", async () => {
+    findByEmailMock.mockResolvedValueOnce(null);
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "password",
+        sessionToken: "clerk-session-token-password-new-user",
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(createUserMock).toHaveBeenCalledTimes(1);
+    await app.close();
+  });
+
+  it("returns 401 for invalid Clerk session token in session exchange", async () => {
+    verifyClerkSessionTokenMock.mockRejectedValueOnce(
+      new ClerkTokenValidationError("invalid session token"),
+    );
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "google",
+        sessionToken: "invalid-token",
+      },
+    });
+    expect(response.statusCode).toBe(401);
+    await app.close();
+  });
+
+  it("returns 400 for missing or unverified email in Clerk session exchange", async () => {
+    verifyClerkSessionTokenMock.mockResolvedValueOnce({
+      providerUserId: "google-user-2",
+      email: null,
+      emailVerified: false,
+      firstName: null,
+      lastName: null,
+      fullName: null,
+    });
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "google",
+        sessionToken: "clerk-session-token-unverified",
+      },
+    });
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ message: "A verified email is required for Clerk login" });
+    await app.close();
+  });
+
+  it("returns 409 when Clerk identity is linked to another user in session exchange", async () => {
+    findByEmailMock.mockResolvedValueOnce({
+      id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
+      name: "User Example",
+      email: "user@example.com",
+      passwordHash: "hashed-password",
+      status: "active",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+      updatedAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+    linkIdentityMock.mockResolvedValueOnce({
+      id: "identity-conflict",
+      userId: "other-user-id",
+      provider: "google",
+      providerUserId: "google-user-2",
+      email: "user@example.com",
+      createdAt: new Date("2026-04-18T12:00:00.000Z"),
+    });
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "google",
+        sessionToken: "clerk-session-token-conflict",
+      },
+    });
+    expect(response.statusCode).toBe(409);
+    expect(response.json()).toEqual({ message: "Clerk identity already linked to another user" });
+    await app.close();
+  });
+
+  it("returns 400 for invalid provider or sessionToken in session exchange", async () => {
+    const app = await buildApp();
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload: {
+        provider: "apple",
+        sessionToken: "",
+      },
+    });
+    expect(response.statusCode).toBe(400);
+    await app.close();
+  });
+
+  it("returns 429 when session exchange rate limit is exceeded", async () => {
+    const app = await buildApp();
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const response = await app.inject({
+        method: "POST",
+        url: "/api/auth/session/exchange",
+        headers: {
+          "x-forwarded-for": "203.0.113.12",
+        },
+        payload: {
+          provider: "google",
+          sessionToken: `clerk-session-token-rate-${attempt}`,
+        },
+      });
+      expect(response.statusCode).toBe(200);
+    }
+    const limitedResponse = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      headers: {
+        "x-forwarded-for": "203.0.113.12",
+      },
+      payload: {
+        provider: "google",
+        sessionToken: "clerk-session-token-rate-final",
+      },
+    });
+    expect(limitedResponse.statusCode).toBe(429);
+    expect(limitedResponse.json()).toEqual({
+      message: "Too many session exchange attempts, please retry later",
+    });
+    await app.close();
+  });
+
+  it("returns 409 for replayed Clerk session exchange attempts", async () => {
+    const app = await buildApp();
+    const payload = {
+      provider: "google",
+      sessionToken: "clerk-session-token-replay",
+    };
+    const first = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload,
+    });
+    const replay = await app.inject({
+      method: "POST",
+      url: "/api/auth/session/exchange",
+      payload,
+    });
+    expect(first.statusCode).toBe(200);
+    expect(replay.statusCode).toBe(409);
+    expect(replay.json()).toEqual({ message: "Session exchange replay detected" });
+    await app.close();
+  });
+
   it("authenticates with oauth session token", async () => {
     const app = await buildApp();
 
