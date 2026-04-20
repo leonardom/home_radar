@@ -114,7 +114,7 @@
         <li>• Email support</li>
       </ul>
       <Button asChild className="w-full" size="lg">
-        <Link href="/(auth)/sign-up">Get Started</Link>
+        <Link href="/sign-up">Get Started</Link>
       </Button>
     </div>
     <div className="border-primary bg-card relative flex flex-col items-center rounded-xl border-2 p-8 text-center shadow-lg">
@@ -132,7 +132,7 @@
         <li>• Priority support</li>
       </ul>
       <Button asChild className="w-full" size="lg" variant="outline">
-        <Link href="/(auth)/sign-up">Start Free Trial</Link>
+        <Link href="/sign-up">Start Free Trial</Link>
       </Button>
     </div>
   </div>
@@ -303,7 +303,7 @@ export default function Home() {
         </div>
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <Button asChild size="lg" className="px-8 py-4 text-lg">
-            <Link href="/(auth)/sign-up">Get Started</Link>
+            <Link href="/sign-up">Get Started</Link>
           </Button>
           <Button
             asChild

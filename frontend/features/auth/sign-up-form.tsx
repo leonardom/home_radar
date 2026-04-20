@@ -1,3 +1,5 @@
+"use client";
+
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -20,9 +22,7 @@ export default function SignUpForm() {
 
   const onSubmit = async (data: AuthSignUpFormValues) => {
     // TODO: Replace with actual sign-up logic (API call, Clerk, etc.)
-    // For now, just log the data
-    // eslint-disable-next-line no-console
-    console.log("Sign up data", data);
+    void data;
   };
 
   return (

@@ -468,7 +468,7 @@ Goal: Ensure frontend forms enforce the same rules as backend validation.
 - [x] Confirm parity for min/max numeric constraints and required-at-least-one-filter-criterion rules.
 - [x] Integrate schemas with React Hook Form resolvers.
 - [x] Implement reusable field-level error rendering and server error mapping.
-- [ ] Disable submit buttons when forms are invalid/submitting.
+- [x] Disable submit buttons when forms are invalid/submitting.
 - [x] Add validation tests for schemas to prevent contract drift.
 - [x] Document source-of-truth mapping to backend contract sections.
 
@@ -478,15 +478,15 @@ Goal: Deliver a high-converting, responsive, polished SaaS landing page.
 
 ### Subtasks
 
-- [ ] Implement hero section with required headline/subheadline and two CTAs.
-- [ ] Add abstract visual/illustration treatment optimized for performance.
-- [ ] Implement features section with 3-4 cards (alerts, filters, aggregation, save/track).
-- [ ] Implement “How It Works” section with the required 3-step flow.
-- [ ] Implement pricing section with Free vs Pro comparison and clear CTAs.
-- [ ] Implement testimonial section with 2-3 realistic mock testimonials.
-- [ ] Implement FAQ section with core alert/pricing questions.
-- [ ] Implement footer with Privacy Policy, Terms, and Contact links.
-- [ ] Ensure mobile-first behavior, contrast compliance, and smooth section transitions.
+- [x] Implement hero section with required headline/subheadline and two CTAs.
+- [x] Add abstract visual/illustration treatment optimized for performance.
+- [x] Implement features section with 3-4 cards (alerts, filters, aggregation, save/track).
+- [x] Implement “How It Works” section with the required 3-step flow.
+- [x] Implement pricing section with Free vs Pro comparison and clear CTAs.
+- [x] Implement testimonial section with 2-3 realistic mock testimonials.
+- [x] Implement FAQ section with core alert/pricing questions.
+- [x] Implement footer with Privacy Policy, Terms, and Contact links.
+- [x] Ensure mobile-first behavior, contrast compliance, and smooth section transitions.
 
 ## FE-8 - Auth-Aware Navigation and Header Behavior
 
@@ -494,7 +494,7 @@ Goal: Render navigation options according to auth state with consistent UX.
 
 ### Subtasks
 
-- [ ] Logged-out header: logo + Sign In + Register only.
+- [x] Logged-out header: logo + Sign In + Register only.
 - [ ] Logged-in header: Dashboard + Filters + Saved Properties + Profile menu.
 - [ ] Implement profile dropdown with logout action.
 - [ ] Add responsive mobile menu behavior for both states.

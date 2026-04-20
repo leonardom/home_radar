@@ -18,7 +18,7 @@ export function PublicNav() {
           href={ROUTES.signUp}
           className="text-muted-foreground hover:text-primary"
         >
-          Sign Up
+          Register
         </Link>
       </div>
     </nav>
