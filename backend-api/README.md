@@ -177,9 +177,6 @@ Public:
 
 - `GET /api/health`
 - `POST /api/auth/session/exchange` (Clerk-first login exchange)
-- `POST /api/auth/register` (deprecated during migration window)
-- `POST /api/auth/login` (deprecated during migration window)
-- `POST /api/auth/oauth`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 
@@ -246,25 +243,24 @@ Backfill mode also marks missing properties as `inactive` (soft status update).
 - Dead-letter capture in `sync_dead_letters` for malformed/failed listings.
 - Diagnostics endpoint `GET /api/sync/status` for checkpoint lag visibility.
 
-## OAuth Login (Clerk + Google/Facebook)
+## Clerk Session Exchange (Password + Social)
 
-The backend supports social login through Clerk via:
+The backend supports Clerk-first authentication via:
 
-- `POST /api/auth/oauth`
+- `POST /api/auth/session/exchange`
 
 Request body:
 
 ```json
 {
   "provider": "google",
-  "sessionToken": "<clerk-session-or-jwt-token>",
-  "state": "<oauth-state>",
-  "nonce": "<oauth-nonce>"
+  "sessionToken": "<clerk-session-or-jwt-token>"
 }
 ```
 
 Supported providers:
 
+- `password`
 - `google`
 - `facebook`
 
@@ -274,7 +270,7 @@ Behavior:
 - Resolves local user by linked provider identity.
 - If no link exists, links to an existing local account when Clerk email is verified and matches.
 - If no local account exists, provisions a new local user and links the provider identity.
-- Returns backend access/refresh tokens with the same contract as password login.
+- Returns backend access/refresh tokens.
 
 Error contracts:
 
@@ -282,7 +278,7 @@ Error contracts:
 - `400` validation errors (including unsupported provider)
 - `400` missing or unverified email in Clerk claims
 - `409` provider identity conflict (already linked to another user)
-- `429` rate-limited OAuth/session exchange attempts
+- `429` rate-limited session exchange attempts
 
 ### Clerk Readiness Diagnostics
 
@@ -402,7 +398,7 @@ Expected result:
 - `auth.clerk.providers.facebook` is `true`.
 - `auth.clerk.issues` is an empty array.
 
-### Local Testing Runbook (Clerk + Google/Facebook)
+### Local Testing Runbook (Clerk Session Exchange + Provider Linking)
 
 1. Start backend-api locally:
 
@@ -414,9 +410,9 @@ npm run dev
 3. Exchange the Clerk token for backend tokens:
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/oauth \
+curl -X POST http://localhost:3000/api/auth/session/exchange \
    -H "Content-Type: application/json" \
-   -d '{"provider":"google","sessionToken":"<clerk-token>","state":"<oauth-state>","nonce":"<oauth-nonce>"}'
+  -d '{"provider":"google","sessionToken":"<clerk-token>"}'
 ```
 
 4. Use returned backend access token to inspect linked providers:
@@ -447,7 +443,7 @@ Expected behavior notes:
 - Linking requires verified Clerk email matching the current backend user email.
 - Unlinking the last linked social provider is blocked with `409`.
 - Invalid Clerk tokens return `401`.
-- Excessive OAuth exchange/link attempts from the same client IP return `429`.
+- Excessive session exchange/link attempts from the same client IP return `429`.
 
 ## Clerk-First Migration Contract (MIG-CLERK-1)
 
@@ -510,22 +506,13 @@ Rationale:
 - New preferred endpoint: `POST /api/auth/session/exchange`
   - Accepts Clerk session token/JWT and provider metadata.
   - Returns backend access/refresh tokens.
-- Existing `POST /api/auth/oauth` remains as compatibility alias during migration window.
-- Existing `POST /api/auth/register` and `POST /api/auth/login` become deprecated in docs and logs during migration window.
-- Post-migration target:
-  - Remove `register/login` local credential entrypoints.
-  - Keep `refresh/logout` with unchanged contracts.
+- `refresh/logout` remain unchanged.
 
-### 7) Compatibility Window and API Versioning
+### 7) Endpoint Stability and API Versioning
 
-- Compatibility window: two releases (or 60 days, whichever is longer).
-- During window:
-  - New clients must use `POST /api/auth/session/exchange`.
-  - Legacy clients may continue using deprecated endpoints.
-  - Deprecation warnings are emitted in response headers/logs.
-- After window:
-  - Disable deprecated local credential routes behind feature flag first.
-  - Remove routes in next minor version and document in changelog.
+- Clients must use `POST /api/auth/session/exchange` for sign-in.
+- Backend continues to support `POST /api/auth/refresh` and `POST /api/auth/logout` with unchanged contracts.
+- Auth API changes are introduced through documented release notes and contract updates.
 
 ### 8) Observability Contract
 

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ClerkTokenValidationError } from "../src/modules/auth/clerk-token.adapter";
 import { oauthRateLimitService } from "../src/modules/auth/oauth-rate-limit.service";
 import { oauthReplayProtectionService } from "../src/modules/auth/oauth-security.service";
-import { DuplicateEmailError } from "../src/modules/users/users.errors";
 
 const {
   checkDatabaseMock,
@@ -477,92 +476,6 @@ describe("API routes", () => {
     await app.close();
   });
 
-  it("registers user successfully", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/register",
-      payload: {
-        name: "User Example",
-        email: "User@Example.com",
-        password: "StrongPass123",
-      },
-    });
-
-    expect(response.statusCode).toBe(201);
-    expect(response.json()).toMatchObject({
-      id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
-      name: "User Example",
-      email: "user@example.com",
-      status: "active",
-    });
-    expect(response.json().passwordHash).toBeUndefined();
-
-    await app.close();
-  });
-
-  it("returns 400 for invalid registration payload", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/register",
-      payload: {
-        name: "",
-        email: "invalid-email",
-        password: "weak",
-      },
-    });
-
-    expect(response.statusCode).toBe(400);
-
-    await app.close();
-  });
-
-  it("returns 409 when email is duplicated", async () => {
-    createUserMock.mockRejectedValueOnce(new DuplicateEmailError("user@example.com"));
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/register",
-      payload: {
-        name: "User Example",
-        email: "user@example.com",
-        password: "StrongPass123",
-      },
-    });
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ message: "Email already in use" });
-
-    await app.close();
-  });
-
-  it("logs in successfully", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/login",
-      payload: {
-        email: "user@example.com",
-        password: "StrongPass123",
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      accessToken: "access-token",
-      refreshToken: "refresh-token",
-      tokenType: "Bearer",
-      expiresIn: 900,
-    });
-
-    await app.close();
-  });
-
   it("authenticates with Clerk session exchange (password)", async () => {
     const app = await buildApp();
     const response = await app.inject({
@@ -778,185 +691,6 @@ describe("API routes", () => {
     await app.close();
   });
 
-  it("authenticates with oauth session token", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "google",
-        sessionToken: "oauth-session-token",
-        state: "oauth_state_login_google_12345",
-        nonce: "oauth_nonce_login_google_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      accessToken: "access-token",
-      refreshToken: "refresh-token",
-      tokenType: "Bearer",
-      expiresIn: 900,
-    });
-
-    await app.close();
-  });
-
-  it("authenticates with facebook oauth session token", async () => {
-    verifyClerkSessionTokenMock.mockResolvedValueOnce({
-      providerUserId: "facebook-user-1",
-      email: "user@example.com",
-      emailVerified: true,
-      firstName: "User",
-      lastName: "Example",
-      fullName: "User Example",
-    });
-
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "facebook",
-        sessionToken: "oauth-session-token-facebook",
-        state: "oauth_state_login_facebook_12345",
-        nonce: "oauth_nonce_login_facebook_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({
-      accessToken: "access-token",
-      refreshToken: "refresh-token",
-      tokenType: "Bearer",
-      expiresIn: 900,
-    });
-
-    await app.close();
-  });
-
-  it("returns 401 for invalid oauth session token", async () => {
-    verifyClerkSessionTokenMock.mockRejectedValueOnce(
-      new ClerkTokenValidationError("invalid oauth token"),
-    );
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "google",
-        sessionToken: "invalid-token",
-        state: "oauth_state_invalid_token_12345",
-        nonce: "oauth_nonce_invalid_token_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(401);
-
-    await app.close();
-  });
-
-  it("returns 400 for invalid oauth provider payload", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "apple",
-        sessionToken: "oauth-session-token",
-        state: "oauth_state_invalid_provider_12345",
-        nonce: "oauth_nonce_invalid_provider_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(400);
-
-    await app.close();
-  });
-
-  it("provisions a new user on first oauth login when no account exists", async () => {
-    findByEmailMock.mockResolvedValueOnce(null);
-
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "google",
-        sessionToken: "oauth-session-token",
-        state: "oauth_state_first_login_12345",
-        nonce: "oauth_nonce_first_login_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(200);
-    expect(createUserMock).toHaveBeenCalledTimes(1);
-
-    await app.close();
-  });
-
-  it("returns 409 when oauth identity is linked to another user", async () => {
-    findByEmailMock.mockResolvedValueOnce({
-      id: "01a4c5ea-7d51-4dc5-9ae2-7726a983eb30",
-      name: "User Example",
-      email: "user@example.com",
-      passwordHash: "hashed-password",
-      status: "active",
-      createdAt: new Date("2026-04-18T12:00:00.000Z"),
-      updatedAt: new Date("2026-04-18T12:00:00.000Z"),
-    });
-    linkIdentityMock.mockResolvedValueOnce({
-      id: "identity-conflict",
-      userId: "other-user-id",
-      provider: "google",
-      providerUserId: "google-user-1",
-      email: "user@example.com",
-      createdAt: new Date("2026-04-18T12:00:00.000Z"),
-    });
-
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "google",
-        sessionToken: "oauth-session-token",
-        state: "oauth_state_conflict_login_12345",
-        nonce: "oauth_nonce_conflict_login_12345",
-      },
-    });
-
-    expect(response.statusCode).toBe(409);
-    expect(response.json()).toEqual({ message: "OAuth identity already linked to another user" });
-
-    await app.close();
-  });
-
-  it("returns 401 for invalid login credentials", async () => {
-    verifyPasswordMock.mockResolvedValueOnce(false);
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/login",
-      payload: {
-        email: "user@example.com",
-        password: "WrongPass123",
-      },
-    });
-
-    expect(response.statusCode).toBe(401);
-    expect(response.json()).toEqual({ message: "Invalid credentials" });
-
-    await app.close();
-  });
-
   it("refreshes token successfully", async () => {
     const app = await buildApp();
 
@@ -1134,96 +868,6 @@ describe("API routes", () => {
     await app.close();
   });
 
-  it("returns 409 for replayed oauth login attempts", async () => {
-    const app = await buildApp();
-    const payload = {
-      provider: "google",
-      sessionToken: "oauth-session-token",
-      state: "oauth_state_replay_login_12345",
-      nonce: "oauth_nonce_replay_login_12345",
-    };
-
-    const first = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload,
-    });
-
-    const replay = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload,
-    });
-
-    expect(first.statusCode).toBe(200);
-    expect(replay.statusCode).toBe(409);
-    expect(replay.json()).toEqual({ message: "OAuth replay detected" });
-
-    await app.close();
-  });
-
-  it("returns 400 for invalid oauth state/nonce", async () => {
-    const app = await buildApp();
-
-    const response = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      payload: {
-        provider: "google",
-        sessionToken: "oauth-session-token",
-        state: "short-state",
-        nonce: "short-nonce",
-      },
-    });
-
-    expect(response.statusCode).toBe(400);
-
-    await app.close();
-  });
-
-  it("returns 429 when oauth login rate limit is exceeded", async () => {
-    const app = await buildApp();
-
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      const response = await app.inject({
-        method: "POST",
-        url: "/api/auth/oauth",
-        headers: {
-          "x-forwarded-for": "203.0.113.10",
-        },
-        payload: {
-          provider: "google",
-          sessionToken: `oauth-session-token-rate-${attempt}`,
-          state: `oauth_state_rate_limit_login_${attempt}_12345`,
-          nonce: `oauth_nonce_rate_limit_login_${attempt}_12345`,
-        },
-      });
-
-      expect(response.statusCode).toBe(200);
-    }
-
-    const limitedResponse = await app.inject({
-      method: "POST",
-      url: "/api/auth/oauth",
-      headers: {
-        "x-forwarded-for": "203.0.113.10",
-      },
-      payload: {
-        provider: "google",
-        sessionToken: "oauth-session-token-rate-final",
-        state: "oauth_state_rate_limit_login_final_12345",
-        nonce: "oauth_nonce_rate_limit_login_final_12345",
-      },
-    });
-
-    expect(limitedResponse.statusCode).toBe(429);
-    expect(limitedResponse.json()).toEqual({
-      message: "Too many OAuth attempts, please retry later",
-    });
-
-    await app.close();
-  });
-
   it("returns 429 when oauth link rate limit is exceeded", async () => {
     const app = await buildApp();
 
@@ -1269,7 +913,7 @@ describe("API routes", () => {
     await app.close();
   });
 
-  it("supports mixed auth flow: password login then social link", async () => {
+  it("supports mixed auth flow: Clerk password session exchange then social link", async () => {
     listIdentitiesByUserIdMock.mockResolvedValueOnce([
       {
         id: "identity-google-1",
@@ -1283,22 +927,22 @@ describe("API routes", () => {
 
     const app = await buildApp();
 
-    const loginResponse = await app.inject({
+    const exchangeResponse = await app.inject({
       method: "POST",
-      url: "/api/auth/login",
+      url: "/api/auth/session/exchange",
       payload: {
-        email: "user@example.com",
-        password: "StrongPass123",
+        provider: "password",
+        sessionToken: "clerk-session-token-mixed-password",
       },
     });
 
-    expect(loginResponse.statusCode).toBe(200);
+    expect(exchangeResponse.statusCode).toBe(200);
 
     const linkResponse = await app.inject({
       method: "POST",
       url: "/api/users/me/auth-providers/link",
       headers: {
-        authorization: `Bearer ${loginResponse.json().accessToken}`,
+        authorization: `Bearer ${exchangeResponse.json().accessToken}`,
       },
       payload: {
         provider: "google",
@@ -1317,7 +961,7 @@ describe("API routes", () => {
     await app.close();
   });
 
-  it("supports mixed auth flow: social login then link another social provider", async () => {
+  it("supports mixed auth flow: Clerk social session exchange then link another social provider", async () => {
     verifyClerkSessionTokenMock
       .mockResolvedValueOnce({
         providerUserId: "google-user-1",
@@ -1356,24 +1000,22 @@ describe("API routes", () => {
 
     const app = await buildApp();
 
-    const oauthLoginResponse = await app.inject({
+    const exchangeResponse = await app.inject({
       method: "POST",
-      url: "/api/auth/oauth",
+      url: "/api/auth/session/exchange",
       payload: {
         provider: "google",
         sessionToken: "oauth-session-token-mixed-google",
-        state: "oauth_state_mixed_social_login_12345",
-        nonce: "oauth_nonce_mixed_social_login_12345",
       },
     });
 
-    expect(oauthLoginResponse.statusCode).toBe(200);
+    expect(exchangeResponse.statusCode).toBe(200);
 
     const linkResponse = await app.inject({
       method: "POST",
       url: "/api/users/me/auth-providers/link",
       headers: {
-        authorization: `Bearer ${oauthLoginResponse.json().accessToken}`,
+        authorization: `Bearer ${exchangeResponse.json().accessToken}`,
       },
       payload: {
         provider: "facebook",

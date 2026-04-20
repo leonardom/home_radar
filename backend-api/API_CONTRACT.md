@@ -26,7 +26,7 @@ Most validation failures return `400` with:
 
 ### Auth token response
 
-Used by auth session/login/refresh endpoints:
+Used by auth session exchange/refresh endpoints:
 
 ```json
 {
@@ -84,71 +84,6 @@ Used by auth session/login/refresh endpoints:
 - `401`: invalid Clerk session token
 - `409`: replay detected or identity conflict
 - `429`: too many attempts
-
-## `POST /auth/register` (deprecated)
-
-- Auth: no
-- Request body:
-
-```json
-{
-  "name": "User Name",
-  "email": "user@example.com",
-  "password": "StrongPass123"
-}
-```
-
-- `201` response:
-
-```json
-{
-  "id": "uuid",
-  "name": "User Name",
-  "email": "user@example.com",
-  "status": "active",
-  "createdAt": "2026-04-20T12:00:00.000Z",
-  "updatedAt": "2026-04-20T12:00:00.000Z"
-}
-```
-
-- `400`: validation error
-- `409`: email already in use
-
-## `POST /auth/login` (deprecated)
-
-- Auth: no
-- Request body:
-
-```json
-{
-  "email": "user@example.com",
-  "password": "StrongPass123"
-}
-```
-
-- `200`: auth token response
-- `400`: validation error
-- `401`: invalid credentials
-
-## `POST /auth/oauth` (compatibility endpoint)
-
-- Auth: no
-- Request body:
-
-```json
-{
-  "provider": "google",
-  "sessionToken": "clerk-session-token",
-  "state": "oauth_state_min16chars",
-  "nonce": "oauth_nonce_min16chars"
-}
-```
-
-- `200`: auth token response
-- `400`: validation error / invalid state-nonce / unverified email
-- `401`: invalid oauth session token
-- `409`: replay detected / identity conflict
-- `429`: rate limit
 
 ## `POST /auth/refresh`
 
@@ -540,6 +475,5 @@ Saved-property object shape:
 ## Frontend integration notes
 
 - Prefer `POST /auth/session/exchange` for all sign-in methods.
-- Treat `POST /auth/register`, `POST /auth/login`, and `POST /auth/oauth` as compatibility endpoints.
 - Handle `401` by redirecting to auth; handle `429` with retry/backoff UI.
 - For forms, render `issues[]` from validation responses when available.
