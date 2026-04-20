@@ -171,6 +171,8 @@ npm run format:check
 
 All routes are under `/api`.
 
+For a frontend-oriented request/response contract reference, see `API_CONTRACT.md`.
+
 Public:
 
 - `GET /api/health`
@@ -197,6 +199,9 @@ Protected (Bearer access token):
 - `PATCH /api/filters/:id`
 - `DELETE /api/filters/:id`
 - `GET /api/matches/me`
+- `POST /api/saved-properties`
+- `GET /api/saved-properties`
+- `DELETE /api/saved-properties/:propertyId`
 - `GET /api/sync/status`
 
 ## Sync Pipeline (Scraper -> Backend API)
