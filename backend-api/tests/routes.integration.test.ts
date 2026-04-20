@@ -471,6 +471,8 @@ describe("API routes", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().status).toBe("ok");
+    expect(response.json().auth?.clerk?.mode).toBe("optional");
+    expect(response.json().auth?.clerk?.ready).toBe(false);
 
     await app.close();
   });

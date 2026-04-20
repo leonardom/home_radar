@@ -55,11 +55,13 @@ SCRAPER_SYNC_RETRY_ATTEMPTS=3
 JWT_ACCESS_SECRET=dev_access_secret_change_me_1234567890
 JWT_ACCESS_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_DAYS=7
+CLERK_AUTH_MODE=optional
 CLERK_SECRET_KEY=
 CLERK_PUBLISHABLE_KEY=
 CLERK_JWT_KEY=
 CLERK_API_URL=
 CLERK_SKIP_JWKS_CACHE=false
+CLERK_ENABLED_SOCIAL_PROVIDERS=google,facebook
 ENFORCE_MIN_ONE_FILTER=false
 EMAIL_FROM=no-reply@home-radar.local
 SENDGRID_API_KEY=
@@ -72,10 +74,12 @@ Notes:
 - `SCRAPER_DATABASE_URL`: DB used to read scraper `listings`.
 - `SCRAPER_SYNC_BATCH_SIZE`: max rows per incremental pull.
 - `SCRAPER_SYNC_RETRY_ATTEMPTS`: retry attempts for transient sync failures.
+- `CLERK_AUTH_MODE`: `optional` (default) or `required`. In `required` mode, startup fails unless Clerk auth is fully configured.
 - `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`: Clerk backend/frontend keys for OAuth foundation.
 - `CLERK_JWT_KEY`: optional Clerk JWT verification key for networkless token verification.
 - `CLERK_API_URL`: optional Clerk backend API URL override.
 - `CLERK_SKIP_JWKS_CACHE`: optional flag to skip JWKS cache during verification.
+- `CLERK_ENABLED_SOCIAL_PROVIDERS`: comma-separated list of enabled social providers. Expected values for this project: `google,facebook`.
 - `ENFORCE_MIN_ONE_FILTER`: optional free-tier rule for filters delete behavior.
 - `EMAIL_FROM`: sender used for outbound match alert emails.
 - `SENDGRID_API_KEY`: SendGrid API key used by the notification worker. If empty, email sending falls back to log mode.
@@ -275,6 +279,20 @@ Error contracts:
 - `409` provider identity conflict (already linked to another user)
 - `429` rate-limited OAuth/session exchange attempts
 
+### Clerk Readiness Diagnostics
+
+`GET /api/health` now includes Clerk readiness diagnostics under `auth.clerk`:
+
+- auth mode (`optional` or `required`)
+- configured verification method (`secret_key`, `jwt_key`, or both)
+- enabled provider status (`google`, `facebook`)
+- readiness boolean and concrete configuration issues
+
+Startup enforcement:
+
+- In `CLERK_AUTH_MODE=required`, backend startup fails fast if Clerk keys/providers are missing.
+- In `NODE_ENV=production`, the same Clerk readiness checks are enforced.
+
 ### Clerk Social Setup Checklist
 
 1. Create a Clerk application and copy `CLERK_SECRET_KEY` and `CLERK_PUBLISHABLE_KEY`.
@@ -282,12 +300,102 @@ Error contracts:
 3. Configure provider credentials in Clerk for Google/Facebook.
 4. Configure OAuth redirect URLs for your frontend application in Clerk.
 5. Set backend environment variables:
+   - `CLERK_AUTH_MODE` (`required` recommended in staging/production once migration starts)
    - `CLERK_SECRET_KEY`
    - `CLERK_PUBLISHABLE_KEY`
    - `CLERK_JWT_KEY` (optional, for local JWT verification)
    - `CLERK_API_URL` (optional override)
    - `CLERK_SKIP_JWKS_CACHE` (optional)
+   - `CLERK_ENABLED_SOCIAL_PROVIDERS` (set to `google,facebook`)
 6. Restart the backend after env changes.
+
+### Clerk Dashboard Runbook (Manual Task 20 Steps)
+
+Use this section to complete and verify the four remaining manual subtasks in Task 20.
+
+#### A) Environment Matrix
+
+Prepare one Clerk app/environment mapping per deployment target:
+
+| Environment | Frontend URL                | Backend API URL                | Clerk Instance/Environment |
+| ----------- | --------------------------- | ------------------------------ | -------------------------- |
+| Local       | `http://localhost:3000`     | `http://localhost:3000/api`    | Development                |
+| Staging     | `<staging-frontend-url>`    | `<staging-backend-url>/api`    | Staging                    |
+| Production  | `<production-frontend-url>` | `<production-backend-url>/api` | Production                 |
+
+Replace placeholders before rollout.
+
+#### B) Enable Email/Password in Clerk
+
+1. Go to Clerk Dashboard -> User & Authentication -> Email, Phone, Username.
+2. Enable Email + Password as a sign-in and sign-up strategy.
+3. Configure password policy to match product/security requirements.
+4. Save and publish the change.
+
+Acceptance checks:
+
+- Email/password appears as enabled in Clerk.
+- New user can sign up with email/password in the target environment.
+
+#### C) Configure Google OAuth in Clerk
+
+1. In Clerk Dashboard -> SSO Connections, enable Google.
+2. Add Google client ID and client secret for each environment.
+3. Confirm allowed redirect URIs are exactly aligned with frontend callback flow.
+4. Save and publish the change.
+
+Acceptance checks:
+
+- Google provider status is enabled in Clerk.
+- Google sign-in completes and returns a valid Clerk session.
+
+#### D) Configure Facebook OAuth in Clerk
+
+1. In Clerk Dashboard -> SSO Connections, enable Facebook.
+2. Add Facebook app ID and app secret for each environment.
+3. Confirm allowed redirect URIs are exactly aligned with frontend callback flow.
+4. Save and publish the change.
+
+Acceptance checks:
+
+- Facebook provider status is enabled in Clerk.
+- Facebook sign-in completes and returns a valid Clerk session.
+
+#### E) Validate Redirect/Callback URLs
+
+For each environment, validate all callback URLs end-to-end:
+
+1. Start from frontend login page.
+2. Perform Google sign-in and verify callback returns to correct frontend route.
+3. Perform Facebook sign-in and verify callback returns to correct frontend route.
+4. Ensure no fallback to unexpected hostname/protocol (for example, http vs https mismatch).
+
+Acceptance checks:
+
+- All callback URLs succeed without provider redirect errors.
+- No cross-environment redirect leakage (staging credentials redirecting to production or local).
+
+#### F) Backend Readiness Verification
+
+After manual Clerk setup, enforce strict validation in staging/production:
+
+1. Set `CLERK_AUTH_MODE=required`.
+2. Set `CLERK_ENABLED_SOCIAL_PROVIDERS=google,facebook`.
+3. Ensure `CLERK_PUBLISHABLE_KEY` and one of `CLERK_SECRET_KEY` or `CLERK_JWT_KEY` are set.
+4. Restart backend-api.
+
+Verify readiness:
+
+```bash
+curl http://localhost:3000/api/health
+```
+
+Expected result:
+
+- `auth.clerk.ready` is `true`.
+- `auth.clerk.providers.google` is `true`.
+- `auth.clerk.providers.facebook` is `true`.
+- `auth.clerk.issues` is an empty array.
 
 ### Local Testing Runbook (Clerk + Google/Facebook)
 
@@ -368,17 +476,17 @@ Rationale:
 - Mapping in backend: `user_identities(provider, provider_user_id, email)` where `provider_user_id` stores Clerk user identity for that provider.
 - Supported providers for sign-in: `password`, `google`, `facebook`.
 - Primary email source:
-   - Local `users.email` remains canonical domain email used in downstream modules.
-   - Email is normalized to lowercase.
+  - Local `users.email` remains canonical domain email used in downstream modules.
+  - Email is normalized to lowercase.
 - Verified email requirement:
-   - Auto-link and auto-provision require verified email in Clerk claims.
+  - Auto-link and auto-provision require verified email in Clerk claims.
 
 ### 4) Account Linking Policy
 
 - Resolve order on login exchange:
-   1. Existing identity link by `(provider, provider_user_id)`.
-   2. Verified email match against existing active local user.
-   3. If none found, provision new local user.
+  1.  Existing identity link by `(provider, provider_user_id)`.
+  2.  Verified email match against existing active local user.
+  3.  If none found, provision new local user.
 - If verified email matches an existing local user, link the incoming provider to that user.
 - Linking endpoint must reject attempts that would remove the last available sign-in method.
 - Provider unlink is allowed only when at least one remaining sign-in method is still linked.
@@ -389,30 +497,30 @@ Rationale:
 - Unverified email from Clerk: return `400` for provisioning/linking flows.
 - Provider mismatch (provider identity already linked to another user): return `409`.
 - Deleted local user recovery:
-   - No silent reactivation.
-   - Return `409` with recovery-required contract (manual/admin or dedicated recovery flow).
+  - No silent reactivation.
+  - Return `409` with recovery-required contract (manual/admin or dedicated recovery flow).
 
 ### 6) Endpoint Contract and Deprecations
 
 - New preferred endpoint: `POST /api/auth/session/exchange`
-   - Accepts Clerk session token/JWT and provider metadata.
-   - Returns backend access/refresh tokens.
+  - Accepts Clerk session token/JWT and provider metadata.
+  - Returns backend access/refresh tokens.
 - Existing `POST /api/auth/oauth` remains as compatibility alias during migration window.
 - Existing `POST /api/auth/register` and `POST /api/auth/login` become deprecated in docs and logs during migration window.
 - Post-migration target:
-   - Remove `register/login` local credential entrypoints.
-   - Keep `refresh/logout` with unchanged contracts.
+  - Remove `register/login` local credential entrypoints.
+  - Keep `refresh/logout` with unchanged contracts.
 
 ### 7) Compatibility Window and API Versioning
 
 - Compatibility window: two releases (or 60 days, whichever is longer).
 - During window:
-   - New clients must use `POST /api/auth/session/exchange`.
-   - Legacy clients may continue using deprecated endpoints.
-   - Deprecation warnings are emitted in response headers/logs.
+  - New clients must use `POST /api/auth/session/exchange`.
+  - Legacy clients may continue using deprecated endpoints.
+  - Deprecation warnings are emitted in response headers/logs.
 - After window:
-   - Disable deprecated local credential routes behind feature flag first.
-   - Remove routes in next minor version and document in changelog.
+  - Disable deprecated local credential routes behind feature flag first.
+  - Remove routes in next minor version and document in changelog.
 
 ### 8) Observability Contract
 

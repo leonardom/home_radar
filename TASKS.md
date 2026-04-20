@@ -324,10 +324,12 @@ Goal: Configure Clerk and application environments to support Clerk email/passwo
 - [ ] Configure Google OAuth provider in Clerk (client ID/secret, redirect URIs, scopes) for all environments.
 - [ ] Configure Facebook OAuth provider in Clerk (app ID/secret, redirect URIs, scopes) for all environments.
 - [ ] Validate Clerk redirect/callback URLs for frontend and backend integration flows.
-- [ ] Add/validate required environment variables (`CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_API_URL`, optional JWT/JWKS cache config).
-- [ ] Add environment validation guards so startup fails fast on missing/invalid Clerk config.
-- [ ] Add provider-specific health checks or startup diagnostics for OAuth readiness.
-- [ ] Update local development setup docs for Clerk email/password + Google/Facebook testing.
+- [x] Add/validate required environment variables (`CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`, `CLERK_API_URL`, optional JWT/JWKS cache config).
+- [x] Add environment validation guards so startup fails fast on missing/invalid Clerk config.
+- [x] Add provider-specific health checks or startup diagnostics for OAuth readiness.
+- [x] Update local development setup docs for Clerk email/password + Google/Facebook testing.
+
+Note: Remaining pending subtasks in Task 20 are manual Clerk Dashboard operations. A detailed execution and acceptance runbook is documented in `backend-api/README.md` under "Clerk Dashboard Runbook (Manual Task 20 Steps)".
 
 ## Task 21 - Backend Auth Flow Refactor to Clerk (MIG-CLERK-3)
 
