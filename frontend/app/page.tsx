@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 export default function Home() {
   return (
     <main className="app-container flex min-h-screen items-center py-20">
-      <Card className="w-full border-border/70 shadow-sm">
+      <Card className="border-border/70 w-full shadow-sm">
         <CardHeader className="gap-4">
           <Badge className="w-fit">Frontend Bootstrap Ready</Badge>
           <CardTitle className="text-3xl leading-tight font-semibold tracking-tight text-balance">
@@ -17,24 +17,24 @@ export default function Home() {
         <CardContent className="grid gap-6 md:grid-cols-2">
           <section className="space-y-3">
             <h2 className="text-lg font-medium">Included in FE-1</h2>
-            <ul className="space-y-2 text-muted-foreground">
+            <ul className="text-muted-foreground space-y-2">
               <li className="flex items-center gap-2">
-                <Radar className="h-4 w-4 text-primary" />
+                <Radar className="text-primary h-4 w-4" />
                 Next.js App Router + TypeScript + Tailwind baseline
               </li>
               <li className="flex items-center gap-2">
-                <House className="h-4 w-4 text-accent" />
+                <House className="text-accent h-4 w-4" />
                 App-wide providers for Clerk, React Query, and toasts
               </li>
               <li className="flex items-center gap-2">
-                <ArrowRight className="h-4 w-4 text-primary" />
+                <ArrowRight className="text-primary h-4 w-4" />
                 Core component primitives and environment validation
               </li>
             </ul>
           </section>
 
-          <section className="space-y-4 rounded-lg border border-border/70 bg-card p-4">
-            <p className="text-sm text-muted-foreground">
+          <section className="border-border/70 bg-card space-y-4 rounded-lg border p-4">
+            <p className="text-muted-foreground text-sm">
               Continue by implementing FE-2 onward in TASKS.md.
             </p>
             <Button asChild>

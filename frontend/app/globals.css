@@ -44,7 +44,12 @@
   left: 0;
   height: 100%;
   width: 100%;
-  background: linear-gradient(90deg, transparent, rgba(200,200,200,0.15), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(200, 200, 200, 0.15),
+    transparent
+  );
   background-size: 200px 100%;
   animation: skeleton 1.2s ease-in-out infinite;
 }

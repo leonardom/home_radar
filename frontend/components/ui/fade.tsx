@@ -13,7 +13,7 @@ export function Fade({ show, children, className, duration = 200 }: FadeProps) {
     <div
       className={cn(
         "transition-opacity",
-        show ? "opacity-100" : "opacity-0 pointer-events-none",
+        show ? "opacity-100" : "pointer-events-none opacity-0",
         className,
       )}
       style={{ transitionDuration: `${duration}ms` }}
