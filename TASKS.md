@@ -449,9 +449,9 @@ Goal: Implement a typed API layer and data fetching architecture for all fronten
 
 ### Subtasks
 
-- [ ] Build API client wrapper with base URL from env and standardized headers.
-- [ ] Add auth-aware request interceptor/middleware for bearer token injection.
-- [ ] Add centralized error mapper for backend validation format (`issues[]`).
+- [x] Build API client wrapper with base URL from env and standardized headers.
+- [x] Add auth-aware request interceptor/middleware for bearer token injection.
+- [x] Add centralized error mapper for backend validation format (`issues[]`).
 - [ ] Define TypeScript DTO/domain types for all consumed endpoints.
 - [ ] Implement React Query key factory for auth/user/filters/matches/saved-properties.
 - [ ] Implement query/mutation hooks for each endpoint in API contract.
