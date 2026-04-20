@@ -436,12 +436,12 @@ Goal: Integrate Clerk for email/password, Google, and Facebook, and align with b
 - [x] Configure Clerk frontend SDK and environment wiring.
 - [x] Implement `/sign-in` page using Clerk-compatible flow + product-tailored UI.
 - [x] Implement `/sign-up` page with email/password + social options.
-- [ ] Ensure social auth options include Google and Facebook in the UX.
+- [x] Ensure social auth options include Google and Facebook in the UX.
 - [x] Implement session handling and token retrieval needed for backend exchange.
 - [x] Integrate `POST /api/auth/session/exchange` to obtain backend access/refresh tokens.
-- [ ] Persist backend tokens securely on client side strategy (cookie or secure storage pattern).
-- [ ] Implement refresh flow via `POST /api/auth/refresh` and logout via `POST /api/auth/logout`.
-- [ ] Add robust error handling for `401`, `409`, `429`, and validation payloads.
+- [x] Persist backend tokens securely on client side strategy (cookie or secure storage pattern).
+- [x] Implement refresh flow via `POST /api/auth/refresh` and logout via `POST /api/auth/logout`.
+- [x] Add robust error handling for `401`, `409`, `429`, and validation payloads.
 
 ## FE-5 - API Client, React Query, and Type Safety Layer
 
