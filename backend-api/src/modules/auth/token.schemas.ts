@@ -1,5 +1,8 @@
 import { z } from "zod";
 
+export const SessionExchangeProviderSchema = z.enum(["password", "google", "facebook"]);
+export const OAuthProviderSchema = z.enum(["google", "facebook"]);
+
 export const LoginRequestSchema = z.object({
   email: z
     .string()
@@ -10,10 +13,15 @@ export const LoginRequestSchema = z.object({
 });
 
 export const OAuthLoginRequestSchema = z.object({
-  provider: z.enum(["google", "facebook"]),
+  provider: OAuthProviderSchema,
   sessionToken: z.string().min(1),
   state: z.string().trim().min(16).max(256),
   nonce: z.string().trim().min(16).max(256),
+});
+
+export const SessionExchangeRequestSchema = z.object({
+  provider: SessionExchangeProviderSchema,
+  sessionToken: z.string().min(1),
 });
 
 export const RefreshRequestSchema = z.object({
@@ -29,5 +37,6 @@ export const AuthTokensResponseSchema = z.object({
 
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type OAuthLoginRequest = z.infer<typeof OAuthLoginRequestSchema>;
+export type SessionExchangeRequest = z.infer<typeof SessionExchangeRequestSchema>;
 export type RefreshRequest = z.infer<typeof RefreshRequestSchema>;
 export type AuthTokensResponse = z.infer<typeof AuthTokensResponseSchema>;

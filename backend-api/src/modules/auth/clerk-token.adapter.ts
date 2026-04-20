@@ -33,10 +33,7 @@ export class ClerkTokenValidationError extends Error {
 }
 
 export class ClerkTokenAdapter {
-  async verifySessionToken(
-    token: string,
-    provider: Extract<AuthProvider, "google" | "facebook">,
-  ): Promise<VerifiedClerkIdentity> {
+  async verifySessionToken(token: string, provider: AuthProvider): Promise<VerifiedClerkIdentity> {
     if (!env.CLERK_SECRET_KEY && !env.CLERK_JWT_KEY) {
       throw new ClerkTokenValidationError(
         "Clerk verification keys are not configured (CLERK_SECRET_KEY or CLERK_JWT_KEY)",

@@ -7,13 +7,20 @@ import {
 } from "./auth.errors";
 import { RefreshTokensRepository } from "./refresh-tokens.repository";
 import { TokenService } from "./token.service";
-import type { AuthTokensResponse, LoginRequest, OAuthLoginRequest } from "./token.schemas";
+import type {
+  AuthTokensResponse,
+  LoginRequest,
+  OAuthLoginRequest,
+  SessionExchangeRequest,
+} from "./token.schemas";
 import { UsersRepository } from "../users/users.repository";
 import { PasswordService } from "./password.service";
 import { AuthIdentityService, ProviderIdentityConflictError } from "./auth-identity.service";
 import { ClerkTokenAdapter } from "./clerk-token.adapter";
 import { UserIdentitiesRepository } from "./user-identities.repository";
 import type { User } from "../users/user.types";
+
+const CLERK_MANAGED_PASSWORD_PLACEHOLDER = "clerk-managed-auth-no-local-password";
 
 export class AuthService {
   constructor(
@@ -71,6 +78,13 @@ export class AuthService {
   }
 
   async oauthLogin(payload: OAuthLoginRequest): Promise<AuthTokensResponse> {
+    return this.exchangeClerkSession({
+      provider: payload.provider,
+      sessionToken: payload.sessionToken,
+    });
+  }
+
+  async exchangeClerkSession(payload: SessionExchangeRequest): Promise<AuthTokensResponse> {
     const verifiedIdentity = await this.clerkTokenAdapter.verifySessionToken(
       payload.sessionToken,
       payload.provider,
@@ -91,7 +105,7 @@ export class AuthService {
       throw new OAuthIdentityEmailRequiredError();
     }
 
-    const user = await this.provisionOAuthUser({
+    const user = await this.provisionClerkUser({
       email: verifiedIdentity.email,
       fullName: verifiedIdentity.fullName,
       firstName: verifiedIdentity.firstName,
@@ -140,7 +154,7 @@ export class AuthService {
     };
   }
 
-  private async provisionOAuthUser(input: {
+  private async provisionClerkUser(input: {
     email: string | null;
     fullName: string | null;
     firstName: string | null;
@@ -150,8 +164,6 @@ export class AuthService {
       throw new OAuthIdentityEmailRequiredError();
     }
 
-    const passwordHash = await this.passwordService.hashPassword(`oauth:${randomUUID()}`);
-
     const fallbackName = input.email.split("@")[0] || "User";
     const composedName = [input.firstName, input.lastName].filter(Boolean).join(" ").trim();
     const name = (input.fullName ?? composedName) || fallbackName;
@@ -159,7 +171,7 @@ export class AuthService {
     return this.usersRepository.createUser({
       name,
       email: input.email,
-      passwordHash,
+      passwordHash: `${CLERK_MANAGED_PASSWORD_PLACEHOLDER}:${randomUUID()}`,
       status: "active",
     });
   }

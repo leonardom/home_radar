@@ -337,16 +337,16 @@ Goal: Replace local password authentication flows with Clerk identity verificati
 
 ### Subtasks
 
-- [ ] Refactor auth service to accept Clerk-authenticated sessions for both email/password and social logins.
-- [ ] Introduce/adjust endpoint for Clerk session token exchange/verification (single unified auth entrypoint).
-- [ ] Ensure provider normalization supports `password`, `google`, and `facebook` in one resolution path.
-- [ ] Rework user resolution logic to prioritize linked identity, then verified email fallback with safe linking.
-- [ ] Ensure first login provisioning creates local user profile from Clerk user claims with deterministic defaults.
-- [ ] Implement explicit provider-link and provider-unlink safeguards (cannot remove last sign-in method).
-- [ ] Keep profile and downstream ownership semantics based on local user ID (no behavioral regressions in domain modules).
-- [ ] Preserve or migrate refresh/access token lifecycle according to selected strategy in Task 19.
-- [ ] Mark legacy local password hash path as deprecated and isolate it behind a short-lived compatibility flag.
-- [ ] Add/update structured logs and metrics for method-specific outcomes (`password`, `google`, `facebook`).
+- [x] Refactor auth service to accept Clerk-authenticated sessions for both email/password and social logins.
+- [x] Introduce/adjust endpoint for Clerk session token exchange/verification (single unified auth entrypoint).
+- [x] Ensure provider normalization supports `password`, `google`, and `facebook` in one resolution path.
+- [x] Rework user resolution logic to prioritize linked identity, then verified email fallback with safe linking.
+- [x] Ensure first login provisioning creates local user profile from Clerk user claims with deterministic defaults.
+- [x] Implement explicit provider-link and provider-unlink safeguards (cannot remove last sign-in method).
+- [x] Keep profile and downstream ownership semantics based on local user ID (no behavioral regressions in domain modules).
+- [x] Preserve or migrate refresh/access token lifecycle according to selected strategy in Task 19.
+- [x] Remove legacy local password hash
+- [x] Add/update structured logs and metrics for method-specific outcomes (`password`, `google`, `facebook`).
 
 ## Task 22 - Data Migration, Testing, and Production Cutover (MIG-CLERK-4)
 
