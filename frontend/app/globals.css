@@ -1,3 +1,53 @@
+.prose {
+  max-width: 65ch;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 2.5rem;
+  letter-spacing: -0.02em;
+}
+.h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 2rem;
+  letter-spacing: -0.01em;
+}
+.h3 {
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.75rem;
+}
+.h4 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1.5rem;
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--muted);
+  border-radius: var(--radius-md);
+  min-height: 1.5em;
+  animation: skeleton 1.2s ease-in-out infinite;
+}
+
+.skeleton::after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, rgba(200,200,200,0.15), transparent);
+  background-size: 200px 100%;
+  animation: skeleton 1.2s ease-in-out infinite;
+}
 @import "tailwindcss";
 
 :root {
