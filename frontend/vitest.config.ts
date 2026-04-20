@@ -10,6 +10,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "html"],
       include: ["lib/**/*.ts"],
+      exclude: ["lib/api/client.ts"],
     },
   },
 });

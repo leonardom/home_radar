@@ -452,10 +452,10 @@ Goal: Implement a typed API layer and data fetching architecture for all fronten
 - [x] Build API client wrapper with base URL from env and standardized headers.
 - [x] Add auth-aware request interceptor/middleware for bearer token injection.
 - [x] Add centralized error mapper for backend validation format (`issues[]`).
-- [ ] Define TypeScript DTO/domain types for all consumed endpoints.
-- [ ] Implement React Query key factory for auth/user/filters/matches/saved-properties.
-- [ ] Implement query/mutation hooks for each endpoint in API contract.
-- [ ] Configure sensible stale time, retries, and cache invalidation patterns.
+- [x] Define TypeScript DTO/domain types for all consumed endpoints.
+- [x] Implement React Query key factory for auth/user/filters/matches/saved-properties.
+- [x] Implement query/mutation hooks for each endpoint in API contract.
+- [x] Configure sensible stale time, retries, and cache invalidation patterns.
 - [ ] Add optimistic mutation patterns where UX benefits (filters/saved properties).
 
 ## FE-6 - Validation Strategy with Backend Parity

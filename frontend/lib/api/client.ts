@@ -7,27 +7,20 @@ import {
 import { publicEnv } from "@/lib/env";
 import { refreshBackendSession } from "@/features/auth/auth-client";
 
-export type ApiValidationIssue = {
-  path?: string;
-  message: string;
-};
-
-export type ApiErrorCode =
-  | "validation"
-  | "unauthorized"
-  | "forbidden"
-  | "not_found"
-  | "conflict"
-  | "rate_limited"
-  | "server_error"
-  | "request_failed";
-
 export class ApiClientError extends Error {
   constructor(
     message: string,
     public readonly status: number,
-    public readonly code: ApiErrorCode,
-    public readonly issues: ApiValidationIssue[] = [],
+    public readonly code:
+      | "validation"
+      | "unauthorized"
+      | "forbidden"
+      | "not_found"
+      | "conflict"
+      | "rate_limited"
+      | "server_error"
+      | "request_failed",
+    public readonly issues: Array<{ path?: string; message: string }> = [],
   ) {
     super(message);
     this.name = "ApiClientError";
@@ -42,7 +35,17 @@ type ApiRequestOptions = {
   retryOnAuth?: boolean;
 };
 
-const toApiErrorCode = (status: number): ApiErrorCode => {
+const toApiErrorCode = (
+  status: number,
+):
+  | "validation"
+  | "unauthorized"
+  | "forbidden"
+  | "not_found"
+  | "conflict"
+  | "rate_limited"
+  | "server_error"
+  | "request_failed" => {
   if (status === 400 || status === 422) {
     return "validation";
   }
@@ -94,7 +97,9 @@ const normalizePath = (path: string): string => {
   return path;
 };
 
-const parseIssues = (payload: unknown): ApiValidationIssue[] => {
+const parseIssues = (
+  payload: unknown,
+): Array<{ path?: string; message: string }> => {
   if (!payload || typeof payload !== "object" || !("issues" in payload)) {
     return [];
   }
@@ -126,7 +131,9 @@ const parseIssues = (payload: unknown): ApiValidationIssue[] => {
 
       return { message, path };
     })
-    .filter((issue): issue is ApiValidationIssue => issue !== null);
+    .filter(
+      (issue): issue is { path?: string; message: string } => issue !== null,
+    );
 };
 
 const parseErrorMessage = (payload: unknown, status: number): string => {
@@ -258,7 +265,7 @@ export const apiClient = {
     options?: Omit<ApiRequestOptions, "method" | "body">,
   ) => request<T>(path, { ...options, method: "PUT", body }),
 
-  delete: <T>(
+  remove: <T>(
     path: string,
     options?: Omit<ApiRequestOptions, "method" | "body">,
   ) => request<T>(path, { ...options, method: "DELETE" }),
