@@ -495,10 +495,10 @@ Goal: Render navigation options according to auth state with consistent UX.
 ### Subtasks
 
 - [x] Logged-out header: logo + Sign In + Register only.
-- [ ] Logged-in header: Dashboard + Filters + Saved Properties + Profile menu.
-- [ ] Implement profile dropdown with logout action.
-- [ ] Add responsive mobile menu behavior for both states.
-- [ ] Add active route highlighting and keyboard navigation support.
+- [x] Logged-in header: Dashboard + Filters + Saved Properties + Profile menu.
+- [x] Implement profile dropdown with logout action.
+- [x] Add responsive mobile menu behavior for both states.
+- [x] Add active route highlighting and keyboard navigation support.
 
 ## FE-9 - Protected Routing and Access Control
 
