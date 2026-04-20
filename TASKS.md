@@ -456,7 +456,7 @@ Goal: Implement a typed API layer and data fetching architecture for all fronten
 - [x] Implement React Query key factory for auth/user/filters/matches/saved-properties.
 - [x] Implement query/mutation hooks for each endpoint in API contract.
 - [x] Configure sensible stale time, retries, and cache invalidation patterns.
-- [ ] Add optimistic mutation patterns where UX benefits (filters/saved properties).
+- [x] Add optimistic mutation patterns where UX benefits (filters/saved properties).
 
 ## FE-6 - Validation Strategy with Backend Parity
 
