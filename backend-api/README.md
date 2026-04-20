@@ -170,8 +170,9 @@ All routes are under `/api`.
 Public:
 
 - `GET /api/health`
-- `POST /api/auth/register`
-- `POST /api/auth/login`
+- `POST /api/auth/session/exchange` (Clerk-first login exchange)
+- `POST /api/auth/register` (deprecated during migration window)
+- `POST /api/auth/login` (deprecated during migration window)
 - `POST /api/auth/oauth`
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
@@ -334,6 +335,113 @@ Expected behavior notes:
 - Unlinking the last linked social provider is blocked with `409`.
 - Invalid Clerk tokens return `401`.
 - Excessive OAuth exchange/link attempts from the same client IP return `429`.
+
+## Clerk-First Migration Contract (MIG-CLERK-1)
+
+This section defines the implementation contract for migrating from local auth credentials to Clerk-managed authentication.
+
+### 1) Target Architecture
+
+- Clerk is the source of truth for authentication factors and credential lifecycle (email/password, Google, Facebook).
+- Backend API remains the source of truth for domain profile, authorization ownership, and business data.
+- Backend authorization continues to use local API access/refresh tokens bound to local `users.id`.
+- Identity linkage between Clerk and backend users is represented in `user_identities`.
+
+### 2) Token Strategy (Decision)
+
+Chosen strategy: Clerk session exchange to local API tokens.
+
+- Clients authenticate with Clerk first.
+- Client sends Clerk session token/JWT to backend exchange endpoint.
+- Backend verifies Clerk token and resolves/provisions/link local user.
+- Backend issues local access/refresh tokens used by protected API routes.
+
+Rationale:
+
+- Avoids broad changes to existing auth middleware and protected routes.
+- Preserves existing refresh/logout lifecycle and token revocation model.
+- Supports phased migration with minimal blast radius.
+
+### 3) Canonical Identity Model
+
+- Canonical external identity key: `clerkUserId`.
+- Mapping in backend: `user_identities(provider, provider_user_id, email)` where `provider_user_id` stores Clerk user identity for that provider.
+- Supported providers for sign-in: `password`, `google`, `facebook`.
+- Primary email source:
+   - Local `users.email` remains canonical domain email used in downstream modules.
+   - Email is normalized to lowercase.
+- Verified email requirement:
+   - Auto-link and auto-provision require verified email in Clerk claims.
+
+### 4) Account Linking Policy
+
+- Resolve order on login exchange:
+   1. Existing identity link by `(provider, provider_user_id)`.
+   2. Verified email match against existing active local user.
+   3. If none found, provision new local user.
+- If verified email matches an existing local user, link the incoming provider to that user.
+- Linking endpoint must reject attempts that would remove the last available sign-in method.
+- Provider unlink is allowed only when at least one remaining sign-in method is still linked.
+
+### 5) Conflict Policy
+
+- Email collision (different linked identity, same email): return `409` and do not auto-merge.
+- Unverified email from Clerk: return `400` for provisioning/linking flows.
+- Provider mismatch (provider identity already linked to another user): return `409`.
+- Deleted local user recovery:
+   - No silent reactivation.
+   - Return `409` with recovery-required contract (manual/admin or dedicated recovery flow).
+
+### 6) Endpoint Contract and Deprecations
+
+- New preferred endpoint: `POST /api/auth/session/exchange`
+   - Accepts Clerk session token/JWT and provider metadata.
+   - Returns backend access/refresh tokens.
+- Existing `POST /api/auth/oauth` remains as compatibility alias during migration window.
+- Existing `POST /api/auth/register` and `POST /api/auth/login` become deprecated in docs and logs during migration window.
+- Post-migration target:
+   - Remove `register/login` local credential entrypoints.
+   - Keep `refresh/logout` with unchanged contracts.
+
+### 7) Compatibility Window and API Versioning
+
+- Compatibility window: two releases (or 60 days, whichever is longer).
+- During window:
+   - New clients must use `POST /api/auth/session/exchange`.
+   - Legacy clients may continue using deprecated endpoints.
+   - Deprecation warnings are emitted in response headers/logs.
+- After window:
+   - Disable deprecated local credential routes behind feature flag first.
+   - Remove routes in next minor version and document in changelog.
+
+### 8) Observability Contract
+
+Required auth event fields for all auth outcomes:
+
+- `event`: `auth.login.success` | `auth.login.failed` | `auth.link.success` | `auth.link.failed`
+- `method`: `password` | `google` | `facebook`
+- `provider`: provider name where applicable
+- `userId`: local user id when available
+- `clerkUserId`: external identity id when available
+- `reason`: normalized failure reason (`invalid_token`, `unverified_email`, `identity_conflict`, `rate_limited`, `replay_detected`, `invalid_nonce_state`)
+- `requestId`, `ip`, and timestamp
+
+Metrics:
+
+- Success/failure counters by auth method and reason.
+- Login exchange latency histogram.
+- Link/unlink conflict counters.
+
+### 9) Security Requirements Checklist
+
+- Require verified email before auto-link/provision.
+- Validate OAuth `state` and `nonce` for social login exchange.
+- Enforce replay protection for Clerk session exchange attempts.
+- Enforce per-client/IP rate limits for auth exchange and link endpoints.
+- Reject unsupported providers with explicit validation errors.
+- Preserve lockout-prevention rule (cannot remove last auth method).
+- Keep token verification strict (signature, expiration, issuer/audience as configured).
+- Keep structured security logs for incident diagnostics.
 
 ## Matching and Persistence Notes
 
