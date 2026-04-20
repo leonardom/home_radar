@@ -370,3 +370,250 @@ Scope note: No legacy auth users were deployed to production, so legacy backfill
 - Update each checkbox as work progresses.
 - If scope changes, add new subtasks under the corresponding task.
 - Keep this file as the source of truth for implementation progress.
+
+---
+
+## Frontend Web App Task Tracker (HomeRadar SaaS)
+
+Status legend:
+
+- [ ] Pending
+- [x] Completed
+
+Execution note:
+
+- Planning complete in this file.
+- Implementation should begin only after explicit go-ahead.
+
+## FE-1 - Frontend Workspace Bootstrap and Tooling
+
+Goal: Scaffold a production-ready Next.js App Router frontend with TypeScript and core quality tooling.
+
+### Subtasks
+
+- [x] Create a new `frontend` app in the monorepo using Next.js (App Router + TypeScript).
+- [x] Configure Tailwind CSS with design tokens (color, spacing, radius, shadows, motion).
+- [x] Add and configure a clean component system (`shadcn/ui` or equivalent) with base primitives.
+- [x] Set up ESLint/Prettier conventions aligned with repo standards.
+- [x] Define environment variables and validation for frontend runtime (`NEXT_PUBLIC_API_BASE_URL`, Clerk keys).
+- [x] Add base folder structure: `app/`, `components/`, `features/`, `lib/`, `hooks/`, `types/`, `styles/`.
+- [x] Add global providers shell (`QueryClientProvider`, Clerk provider, theme tokens, toast host).
+- [x] Validate baseline commands (`npm run dev`, `npm run build`, `npm run lint`, tests).
+
+## FE-2 - Design System and UX Foundations
+
+Goal: Establish a cohesive, accessible SaaS visual system with reusable UI patterns.
+
+### Subtasks
+
+- [x] Define CSS variables for brand palette (indigo/blue primary, emerald accent, neutral grayscale).
+- [x] Implement typography scale, spacing scale, elevation system, and container rhythm.
+- [x] Build reusable components: buttons, inputs, badges, cards, section wrappers, empty states.
+- [x] Add motion primitives for hover/focus, reveal transitions, and reduced-motion support.
+- [x] Implement responsive breakpoints and mobile-first layout constraints.
+- [x] Add accessibility baseline: focus-visible states, semantic landmarks, ARIA patterns.
+- [x] Create skeleton components for list/card/form loading states.
+
+## FE-3 - Routing and App Architecture
+
+Goal: Build maintainable route groups and shared layout structure for public, auth, and protected experiences.
+
+### Subtasks
+
+- [x] Create App Router groups: `(public)`, `(auth)`, `(protected)`.
+- [x] Implement root layout with metadata, providers, base styles, and viewport settings.
+- [x] Add route-level layouts for public pages and authenticated application shell.
+- [x] Define navigation component variants for logged-out and logged-in states.
+- [x] Implement global error and not-found pages with branded UX.
+- [x] Add route constants and typed navigation helpers.
+
+## FE-4 - Clerk Authentication Integration
+
+Goal: Integrate Clerk for email/password, Google, and Facebook, and align with backend exchange flow.
+
+### Subtasks
+
+- [x] Configure Clerk frontend SDK and environment wiring.
+- [x] Implement `/sign-in` page using Clerk-compatible flow + product-tailored UI.
+- [x] Implement `/sign-up` page with email/password + social options.
+- [ ] Ensure social auth options include Google and Facebook in the UX.
+- [x] Implement session handling and token retrieval needed for backend exchange.
+- [x] Integrate `POST /api/auth/session/exchange` to obtain backend access/refresh tokens.
+- [ ] Persist backend tokens securely on client side strategy (cookie or secure storage pattern).
+- [ ] Implement refresh flow via `POST /api/auth/refresh` and logout via `POST /api/auth/logout`.
+- [ ] Add robust error handling for `401`, `409`, `429`, and validation payloads.
+
+## FE-5 - API Client, React Query, and Type Safety Layer
+
+Goal: Implement a typed API layer and data fetching architecture for all frontend features.
+
+### Subtasks
+
+- [ ] Build API client wrapper with base URL from env and standardized headers.
+- [ ] Add auth-aware request interceptor/middleware for bearer token injection.
+- [ ] Add centralized error mapper for backend validation format (`issues[]`).
+- [ ] Define TypeScript DTO/domain types for all consumed endpoints.
+- [ ] Implement React Query key factory for auth/user/filters/matches/saved-properties.
+- [ ] Implement query/mutation hooks for each endpoint in API contract.
+- [ ] Configure sensible stale time, retries, and cache invalidation patterns.
+- [ ] Add optimistic mutation patterns where UX benefits (filters/saved properties).
+
+## FE-6 - Validation Strategy with Backend Parity
+
+Goal: Ensure frontend forms enforce the same rules as backend validation.
+
+### Subtasks
+
+- [ ] Build Zod schemas for auth forms and filter form aligned to backend constraints.
+- [ ] Confirm parity for min/max numeric constraints and required-at-least-one-filter-criterion rules.
+- [ ] Integrate schemas with React Hook Form resolvers.
+- [ ] Implement reusable field-level error rendering and server error mapping.
+- [ ] Disable submit buttons when forms are invalid/submitting.
+- [ ] Add validation tests for schemas to prevent contract drift.
+- [ ] Document source-of-truth mapping to backend contract sections.
+
+## FE-7 - Public Landing Page (/)
+
+Goal: Deliver a high-converting, responsive, polished SaaS landing page.
+
+### Subtasks
+
+- [ ] Implement hero section with required headline/subheadline and two CTAs.
+- [ ] Add abstract visual/illustration treatment optimized for performance.
+- [ ] Implement features section with 3-4 cards (alerts, filters, aggregation, save/track).
+- [ ] Implement “How It Works” section with the required 3-step flow.
+- [ ] Implement pricing section with Free vs Pro comparison and clear CTAs.
+- [ ] Implement testimonial section with 2-3 realistic mock testimonials.
+- [ ] Implement FAQ section with core alert/pricing questions.
+- [ ] Implement footer with Privacy Policy, Terms, and Contact links.
+- [ ] Ensure mobile-first behavior, contrast compliance, and smooth section transitions.
+
+## FE-8 - Auth-Aware Navigation and Header Behavior
+
+Goal: Render navigation options according to auth state with consistent UX.
+
+### Subtasks
+
+- [ ] Logged-out header: logo + Sign In + Register only.
+- [ ] Logged-in header: Dashboard + Filters + Saved Properties + Profile menu.
+- [ ] Implement profile dropdown with logout action.
+- [ ] Add responsive mobile menu behavior for both states.
+- [ ] Add active route highlighting and keyboard navigation support.
+
+## FE-9 - Protected Routing and Access Control
+
+Goal: Restrict dashboard, filters, and profile routes to authenticated users.
+
+### Subtasks
+
+- [ ] Implement route guard middleware/pattern for `(protected)` routes.
+- [ ] Redirect unauthenticated users to `/sign-in` with return URL support.
+- [ ] Handle expired/invalid token flow gracefully.
+- [ ] Ensure no protected content flashes before redirect.
+- [ ] Add tests for protected-route behavior.
+
+## FE-10 - Dashboard Page (/dashboard)
+
+Goal: Present matched properties with clear cards, states, and useful actions.
+
+### Subtasks
+
+- [ ] Integrate `GET /api/matches/me` query and state handling.
+- [ ] Build card layout with image, price, details, and external listing CTA.
+- [ ] Include match context (reasons, matched timestamp) in card metadata.
+- [ ] Add loading skeletons and empty-state UX when no matches exist.
+- [ ] Add save/unsave affordance if connected to saved properties.
+- [ ] Ensure responsive grid behavior and accessible card controls.
+
+## FE-11 - Filters Page (/filters)
+
+Goal: Deliver complete filter management with create, edit, delete, and list UX.
+
+### Subtasks
+
+- [ ] Build filter form fields: price range, bedrooms, bathrooms, location, keywords.
+- [ ] Integrate create mutation with `POST /api/filters`.
+- [ ] Integrate list query with `GET /api/filters`.
+- [ ] Integrate update mutation with `PATCH /api/filters/:id`.
+- [ ] Integrate delete mutation with `DELETE /api/filters/:id`.
+- [ ] Provide inline and toast feedback for success/error states.
+- [ ] Handle backend `409 minimum filter constraint` with clear UX guidance.
+- [ ] Apply optimistic updates and rollback for edit/delete actions.
+- [ ] Add empty state and first-filter onboarding hint.
+
+## FE-12 - Profile Page (/profile)
+
+Goal: Let users view/edit their profile and manage session actions.
+
+### Subtasks
+
+- [ ] Integrate `GET /api/users/me` for profile display.
+- [ ] Integrate `PATCH /api/users/me` for name/email updates.
+- [ ] Show linked providers from user payload and auth-providers endpoint.
+- [ ] Integrate logout action across Clerk + backend logout endpoint.
+- [ ] Provide robust error handling (e.g., email conflict `409`).
+- [ ] Add account safety messaging around auth provider changes.
+
+## FE-13 - Saved Properties Page (Optional Route)
+
+Goal: Implement saved properties management as an authenticated utility page.
+
+### Subtasks
+
+- [ ] Add route and UI for saved properties list.
+- [ ] Integrate `GET /api/saved-properties` with pagination/sort params.
+- [ ] Integrate `POST /api/saved-properties` and `DELETE /api/saved-properties/:propertyId`.
+- [ ] Add save/unsave controls reusable from dashboard cards.
+- [ ] Handle empty/loading/error states with actionable messaging.
+
+## FE-14 - Notifications, Feedback, and UX Polish
+
+Goal: Improve perceived quality with responsive feedback loops and polished states.
+
+### Subtasks
+
+- [ ] Integrate global toast system for success/error/info notifications.
+- [ ] Standardize mutation loading states and button busy indicators.
+- [ ] Add graceful empty/error/retry components for key pages.
+- [ ] Add subtle transitions for card interactions and page sections.
+- [ ] Implement retry/backoff UX guidance for throttling (`429`) responses.
+- [ ] Ensure CLS-safe image and layout behavior for core pages.
+
+## FE-15 - Testing and Quality Gates
+
+Goal: Ensure implementation stability and prevent regressions.
+
+### Subtasks
+
+- [ ] Add unit tests for utilities, schemas, and API client behavior.
+- [ ] Add component tests for key forms and navigation/auth conditions.
+- [ ] Add integration tests for core flows: sign-in, create filter, dashboard load, profile update.
+- [ ] Add route protection tests (authenticated vs unauthenticated scenarios).
+- [ ] Add accessibility checks for major pages and form interactions.
+- [ ] Ensure lint/build/test pipelines pass locally and in CI.
+
+## FE-16 - Performance, Security, and Production Hardening
+
+Goal: Prepare the frontend for production deployment and operations.
+
+### Subtasks
+
+- [ ] Verify environment separation and secure key handling across environments.
+- [ ] Add security headers and safe defaults in Next.js config where applicable.
+- [ ] Optimize bundle splits, image delivery, and route-level loading strategies.
+- [ ] Review caching strategy for public vs protected content.
+- [ ] Add analytics/telemetry hooks for critical product events (optional if analytics is in scope).
+- [ ] Validate Lighthouse baseline for landing and dashboard pages.
+
+## FE-17 - Documentation and Handoff
+
+Goal: Make the frontend easy to run, maintain, and extend.
+
+### Subtasks
+
+- [ ] Add `frontend/README.md` with setup, env vars, scripts, and architecture overview.
+- [ ] Document API contract mapping and endpoint usage decisions.
+- [ ] Document auth flow (Clerk + backend exchange + refresh/logout lifecycle).
+- [ ] Provide page/component map and feature ownership boundaries.
+- [ ] Add troubleshooting section for common auth/API/environment issues.
+- [ ] Add release checklist for production rollout.
