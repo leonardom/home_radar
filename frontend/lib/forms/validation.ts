@@ -1,7 +1,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { FieldErrors, UseFormSetError } from "react-hook-form";
 import type { z } from "zod";
-import { authSignInFormSchema, authSignUpFormSchema } from "@/features/auth/auth-form.schemas";
+import {
+  authSignInFormSchema,
+  authSignUpFormSchema,
+} from "@/features/auth/auth-form.schemas";
 import {
   createFilterFormSchema,
   updateFilterFormSchema,
@@ -17,7 +20,9 @@ export const authSignUpResolver = zodResolver(authSignUpFormSchema);
 export const createFilterResolver = zodResolver(createFilterFormSchema);
 export const updateFilterResolver = zodResolver(updateFilterFormSchema);
 
-export const mapServerValidationErrorsToForm = <TValues extends Record<string, unknown>>(
+export const mapServerValidationErrorsToForm = <
+  TValues extends Record<string, unknown>,
+>(
   issues: ValidationIssue[] | undefined,
   setError: UseFormSetError<TValues>,
 ): void => {

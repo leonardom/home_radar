@@ -9,7 +9,9 @@ const propertyTypeSchema = z.enum([
   "other",
 ]);
 
-const parseOptionalNullableInt = (value: unknown): number | null | undefined => {
+const parseOptionalNullableInt = (
+  value: unknown,
+): number | null | undefined => {
   if (value === undefined) {
     return undefined;
   }
@@ -43,11 +45,19 @@ const validateRanges = <
 >(
   data: T,
 ): boolean => {
-  if (data.priceMin != null && data.priceMax != null && data.priceMin > data.priceMax) {
+  if (
+    data.priceMin != null &&
+    data.priceMax != null &&
+    data.priceMin > data.priceMax
+  ) {
     return false;
   }
 
-  if (data.bedroomsMin != null && data.bedroomsMax != null && data.bedroomsMin > data.bedroomsMax) {
+  if (
+    data.bedroomsMin != null &&
+    data.bedroomsMax != null &&
+    data.bedroomsMin > data.bedroomsMax
+  ) {
     return false;
   }
 

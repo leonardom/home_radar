@@ -40,12 +40,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 Frontend validation schemas are aligned to backend Zod contracts:
 
 - Auth forms:
-	- Frontend: `features/auth/auth-form.schemas.ts`
-	- Backend source: `backend-api/src/modules/auth/register.schemas.ts`
-	- Backend source: `backend-api/src/modules/auth/token.schemas.ts`
+  - Frontend: `features/auth/auth-form.schemas.ts`
+  - Backend source: `backend-api/src/modules/auth/register.schemas.ts`
+  - Backend source: `backend-api/src/modules/auth/token.schemas.ts`
 - Filters forms:
-	- Frontend: `features/filters/filter-form.schemas.ts`
-	- Backend source: `backend-api/src/modules/filters/filters.schemas.ts`
+  - Frontend: `features/filters/filter-form.schemas.ts`
+  - Backend source: `backend-api/src/modules/filters/filters.schemas.ts`
 
 Parity rules currently mirrored:
 
