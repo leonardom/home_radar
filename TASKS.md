@@ -464,13 +464,13 @@ Goal: Ensure frontend forms enforce the same rules as backend validation.
 
 ### Subtasks
 
-- [ ] Build Zod schemas for auth forms and filter form aligned to backend constraints.
-- [ ] Confirm parity for min/max numeric constraints and required-at-least-one-filter-criterion rules.
-- [ ] Integrate schemas with React Hook Form resolvers.
-- [ ] Implement reusable field-level error rendering and server error mapping.
+- [x] Build Zod schemas for auth forms and filter form aligned to backend constraints.
+- [x] Confirm parity for min/max numeric constraints and required-at-least-one-filter-criterion rules.
+- [x] Integrate schemas with React Hook Form resolvers.
+- [x] Implement reusable field-level error rendering and server error mapping.
 - [ ] Disable submit buttons when forms are invalid/submitting.
-- [ ] Add validation tests for schemas to prevent contract drift.
-- [ ] Document source-of-truth mapping to backend contract sections.
+- [x] Add validation tests for schemas to prevent contract drift.
+- [x] Document source-of-truth mapping to backend contract sections.
 
 ## FE-7 - Public Landing Page (/)
 

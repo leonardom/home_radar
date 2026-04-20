@@ -34,3 +34,28 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Validation Source Of Truth (FE-6)
+
+Frontend validation schemas are aligned to backend Zod contracts:
+
+- Auth forms:
+	- Frontend: `features/auth/auth-form.schemas.ts`
+	- Backend source: `backend-api/src/modules/auth/register.schemas.ts`
+	- Backend source: `backend-api/src/modules/auth/token.schemas.ts`
+- Filters forms:
+	- Frontend: `features/filters/filter-form.schemas.ts`
+	- Backend source: `backend-api/src/modules/filters/filters.schemas.ts`
+
+Parity rules currently mirrored:
+
+- Email normalization and max length constraints.
+- Password strength constraints (uppercase, lowercase, number, length).
+- Numeric non-negative integer constraints for filter ranges.
+- Cross-field range validation (`min <= max`).
+- At-least-one-filter-criterion requirement for filter creation.
+- At-least-one-field requirement for filter updates.
+
+React Hook Form integration and server-validation mapping utilities:
+
+- `lib/forms/validation.ts`
