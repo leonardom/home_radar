@@ -3,7 +3,7 @@ import { ProtectedNav } from "@/components/navigation/protected-nav";
 
 export default function ProtectedLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground min-h-screen">
       <ProtectedNav />
       {children}
     </div>

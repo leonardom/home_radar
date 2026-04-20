@@ -3,7 +3,7 @@ import { PublicNav } from "@/components/navigation/public-nav";
 
 export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground min-h-screen">
       <PublicNav />
       {children}
     </div>
