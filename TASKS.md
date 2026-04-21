@@ -518,12 +518,12 @@ Goal: Present matched properties with clear cards, states, and useful actions.
 
 ### Subtasks
 
-- [ ] Integrate `GET /api/matches/me` query and state handling.
-- [ ] Build card layout with image, price, details, and external listing CTA.
-- [ ] Include match context (reasons, matched timestamp) in card metadata.
-- [ ] Add loading skeletons and empty-state UX when no matches exist.
-- [ ] Add save/unsave affordance if connected to saved properties.
-- [ ] Ensure responsive grid behavior and accessible card controls.
+- [x] Integrate `GET /api/matches/me` query and state handling.
+- [x] Build card layout with image, price, details, and external listing CTA.
+- [x] Include match context (reasons, matched timestamp) in card metadata.
+- [x] Add loading skeletons and empty-state UX when no matches exist.
+- [x] Add save/unsave affordance if connected to saved properties.
+- [x] Ensure responsive grid behavior and accessible card controls.
 
 ## FE-11 - Filters Page (/filters)
 
