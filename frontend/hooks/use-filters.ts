@@ -75,17 +75,13 @@ export const useUpdateFilterMutation = () => {
       id: string;
       payload: UpdateFilterPayload;
     }) => filtersApi.update(id, payload),
+    // Optimistic update for edit
     onMutate: async ({ id, payload }) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.filters.list() });
-
       const previous = queryClient.getQueryData<FiltersListResponse>(
         queryKeys.filters.list(),
       );
-
-      if (!previous) {
-        return { previous };
-      }
-
+      if (!previous) return { previous };
       queryClient.setQueryData<FiltersListResponse>(queryKeys.filters.list(), {
         items: previous.items.map((item) =>
           item.id === id
@@ -98,14 +94,15 @@ export const useUpdateFilterMutation = () => {
             : item,
         ),
       });
-
       return { previous };
     },
+    // Rollback on error
     onError: (_error, _variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKeys.filters.list(), context.previous);
       }
     },
+    // Always refetch after mutation
     onSettled: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.filters.list(),
@@ -119,28 +116,25 @@ export const useDeleteFilterMutation = () => {
 
   return useMutation({
     mutationFn: (id: string) => filtersApi.remove(id),
+    // Optimistic update for delete
     onMutate: async (id: string) => {
       await queryClient.cancelQueries({ queryKey: queryKeys.filters.list() });
-
       const previous = queryClient.getQueryData<FiltersListResponse>(
         queryKeys.filters.list(),
       );
-
-      if (!previous) {
-        return { previous };
-      }
-
+      if (!previous) return { previous };
       queryClient.setQueryData<FiltersListResponse>(queryKeys.filters.list(), {
         items: previous.items.filter((item) => item.id !== id),
       });
-
       return { previous };
     },
+    // Rollback on error
     onError: (_error, _variables, context) => {
       if (context?.previous) {
         queryClient.setQueryData(queryKeys.filters.list(), context.previous);
       }
     },
+    // Always refetch after mutation
     onSettled: async () => {
       await queryClient.invalidateQueries({
         queryKey: queryKeys.filters.list(),

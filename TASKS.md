@@ -531,15 +531,15 @@ Goal: Deliver complete filter management with create, edit, delete, and list UX.
 
 ### Subtasks
 
-- [ ] Build filter form fields: price range, bedrooms, bathrooms, location, keywords.
-- [ ] Integrate create mutation with `POST /api/filters`.
-- [ ] Integrate list query with `GET /api/filters`.
-- [ ] Integrate update mutation with `PATCH /api/filters/:id`.
-- [ ] Integrate delete mutation with `DELETE /api/filters/:id`.
-- [ ] Provide inline and toast feedback for success/error states.
-- [ ] Handle backend `409 minimum filter constraint` with clear UX guidance.
-- [ ] Apply optimistic updates and rollback for edit/delete actions.
-- [ ] Add empty state and first-filter onboarding hint.
+- [x] Build filter form fields: price range, bedrooms, bathrooms, location, keywords.
+- [x] Integrate create mutation with `POST /api/filters`.
+- [x] Integrate list query with `GET /api/filters`.
+- [x] Integrate update mutation with `PATCH /api/filters/:id`.
+- [x] Integrate delete mutation with `DELETE /api/filters/:id`.
+- [x] Provide inline and toast feedback for success/error states.
+- [x] Handle backend `409 minimum filter constraint` with clear UX guidance.
+- [x] Apply optimistic updates and rollback for edit/delete actions.
+- [x] Add empty state and first-filter onboarding hint.
 
 ## FE-12 - Profile Page (/profile)
 
