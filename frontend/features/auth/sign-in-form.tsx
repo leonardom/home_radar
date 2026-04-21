@@ -21,6 +21,7 @@ export default function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
 
   const returnTo = searchParams.get("returnTo") || FALLBACK_REDIRECT;
+  const reason = searchParams.get("reason");
 
   const {
     register,
@@ -120,6 +121,12 @@ export default function SignInForm() {
       {errors.root?.message && (
         <p className="text-destructive text-sm" role="alert">
           {errors.root.message}
+        </p>
+      )}
+
+      {!errors.root?.message && reason === "session_expired" && (
+        <p className="text-muted-foreground text-sm" role="status">
+          Your session expired. Please sign in again.
         </p>
       )}
 

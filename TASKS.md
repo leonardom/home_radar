@@ -506,11 +506,11 @@ Goal: Restrict dashboard, filters, and profile routes to authenticated users.
 
 ### Subtasks
 
-- [ ] Implement route guard middleware/pattern for `(protected)` routes.
-- [ ] Redirect unauthenticated users to `/sign-in` with return URL support.
-- [ ] Handle expired/invalid token flow gracefully.
-- [ ] Ensure no protected content flashes before redirect.
-- [ ] Add tests for protected-route behavior.
+- [x] Implement route guard middleware/pattern for `(protected)` routes.
+- [x] Redirect unauthenticated users to `/sign-in` with return URL support.
+- [x] Handle expired/invalid token flow gracefully.
+- [x] Ensure no protected content flashes before redirect.
+- [x] Add tests for protected-route behavior.
 
 ## FE-10 - Dashboard Page (/dashboard)
 
